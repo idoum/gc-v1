@@ -1,0 +1,30 @@
+<!-- 
+  @path src/main/resources/templates/security/login.html
+  @description Page de connexion personnalisée
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Connexion - Gestion Commerciale</title>
+  <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body>
+  <div class="container mt-5">
+    <h2>Veuillez vous connecter</h2>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+    <div th:if="${logoutMessage}" class="alert alert-success" th:text="${logoutMessage}"></div>
+    <form th:action="@{/login}" method="post">
+      <div class="mb-3">
+        <label for="username" class="form-label">Nom d'utilisateur</label>
+        <input type="text" id="username" name="username" class="form-control" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Mot de passe</label>
+        <input type="password" id="password" name="password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Se connecter</button>
+    </form>
+  </div>
+</body>
+</html>

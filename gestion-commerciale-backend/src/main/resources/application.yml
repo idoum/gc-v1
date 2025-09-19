@@ -1,0 +1,7 @@
+# 
+# @path src/main/resources/application.yml
+# @description Configuration Spring Boot et inclusion des profils
+---
+spring:
+  profiles:
+    active: dev

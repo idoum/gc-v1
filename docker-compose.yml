@@ -1,0 +1,37 @@
+# 
+# @path docker-compose.yml
+# @description Docker-compose avec healthcheck pour garantir la disponibilité de MySQL
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: gc-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gc_dev
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin","ping","-h","localhost","-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./gestion-commerciale-backend
+    container_name: gc-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  db_data:
