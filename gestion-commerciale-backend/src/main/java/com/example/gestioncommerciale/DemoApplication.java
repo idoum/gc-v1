@@ -1,4 +1,4 @@
-package com.example.gestion_commerciale;
+package com.example.gestioncommerciale;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

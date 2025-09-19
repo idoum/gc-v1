@@ -1,6 +1,6 @@
 /*
  * @path src/main/java/com/example/gestioncommerciale/config/SecurityConfig.java
- * @description Sécurité : formulaire custom, RBAC, gestion d’erreurs
+ * @description Sécurité : formulaire custom, RBAC, gestion d’erreurs et APIs REST
  */
 package com.example.gestioncommerciale.config;
 
@@ -25,18 +25,20 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/api/**").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/manager/**").hasAnyRole("ADMIN","MANAGER")
                 .requestMatchers("/user/**").hasAnyRole("ADMIN","MANAGER","USER")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginPage("/login")                 // URL de votre template
-                .loginProcessingUrl("/login")        // endpoint POST du form
-                .defaultSuccessUrl("/dashboard",true)
+                .loginPage("/login")
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
+            .httpBasic(org.springframework.security.config.Customizer.withDefaults())  // Activation de l'authentification HTTP Basic pour les APIs
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout=true")
@@ -48,11 +50,11 @@ public class SecurityConfig {
                 .accessDeniedPage("/access-denied")
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/**")
             );
 
-        // Autoriser frames (pour H2 console ou debug)
-        http.headers(headers -> headers.frameOptions().sameOrigin());
+        // Autoriser frames pour H2 console
+        http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
     }
@@ -64,16 +66,19 @@ public class SecurityConfig {
             .password(passwordEncoder().encode("admin123"))
             .roles("ADMIN")
             .build();
+
         UserDetails manager = User.builder()
             .username("manager")
             .password(passwordEncoder().encode("manager123"))
             .roles("MANAGER")
             .build();
+
         UserDetails user = User.builder()
             .username("user")
             .password(passwordEncoder().encode("user123"))
             .roles("USER")
             .build();
+
         return new InMemoryUserDetailsManager(admin, manager, user);
     }
 
