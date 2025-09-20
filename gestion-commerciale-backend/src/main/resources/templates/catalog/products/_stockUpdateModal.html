@@ -1,0 +1,236 @@
+<!--
+  @path src/main/resources/templates/catalog/products/_stockUpdateModal.html
+  @description Modal pour mise à jour rapide du stock d'un produit
+-->
+<div class="modal fade" id="stockUpdateModal" tabindex="-1" th:fragment="stock-update-modal"
+     x-data="stockUpdateForm()" @shown.bs.modal="focusQuantityField()">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{'/catalog/products/' + ${product.id} + '/stock'}"
+                  method="post"
+                  hx-post th:attr="hx-post=@{'/catalog/products/' + ${product.id} + '/stock'}"
+                  hx-target="#product-table-container"
+                  hx-swap="innerHTML"
+                  @submit="showLoading = true">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-seam me-2"></i>
+                        Mise à jour du stock
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Informations produit -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body py-2">
+                            <div class="d-flex align-items-center">
+                                <img th:if="${product.thumbnailUrl}" 
+                                     th:src="${product.thumbnailUrl}" 
+                                     th:alt="${product.name}"
+                                     class="img-thumbnail me-3"
+                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                <div th:unless="${product.thumbnailUrl}" 
+                                     class="bg-white border rounded d-flex align-items-center justify-content-center me-3"
+                                     style="width: 50px; height: 50px;">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                                
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1" th:text="${product.name}">Nom du produit</h6>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <code class="text-muted small" th:text="${product.code}">PRD-001</code>
+                                        <span class="badge bg-secondary" th:text="${product.categoryName}">Catégorie</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- État actuel du stock -->
+                    <div class="row mb-3">
+                        <div class="col-4">
+                            <div class="text-center">
+                                <div class="text-muted small">Stock actuel</div>
+                                <div class="h4 mb-0" 
+                                     th:class="${product.outOfStock ? 'text-danger' : (product.lowStock ? 'text-warning' : 'text-success')}"
+                                     th:text="${product.stockQuantity}">15</div>
+                                <small class="text-muted" th:text="${product.unit}">pce</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-4">
+                            <div class="text-center">
+                                <div class="text-muted small">Stock minimum</div>
+                                <div class="h5 mb-0 text-warning" th:text="${product.minStockLevel}">5</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-4" th:if="${product.maxStockLevel > 0}">
+                            <div class="text-center">
+                                <div class="text-muted small">Stock maximum</div>
+                                <div class="h5 mb-0 text-info" th:text="${product.maxStockLevel}">100</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nouvelle quantité -->
+                    <div class="mb-3">
+                        <label class="form-label" for="newQuantity">
+                            <strong>Nouvelle quantité</strong>
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary"
+                                    @click="adjustQuantity(-1)">
+                                <i class="bi bi-dash"></i>
+                            </button>
+                            <input type="number" 
+                                   class="form-control text-center" 
+                                   id="newQuantity" 
+                                   name="newQuantity"
+                                   x-model.number="newQuantity"
+                                   th:value="${product.stockQuantity}"
+                                   min="0"
+                                   required>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary"
+                                    @click="adjustQuantity(1)">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                            <span class="input-group-text" th:text="${product.unit}">pce</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Boutons d'ajustement rapide -->
+                    <div class="mb-3">
+                        <div class="text-muted small mb-2">Ajustements rapides :</div>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="setQuantity([[${product.minStockLevel}]])">
+                                Min (<span th:text="${product.minStockLevel}">5</span>)
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="adjustQuantity(-10)">
+                                -10
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="adjustQuantity(-5)">
+                                -5
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="setQuantity(0)">
+                                0
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="adjustQuantity(5)">
+                                +5
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="adjustQuantity(10)">
+                                +10
+                            </button>
+                            <button th:if="${product.maxStockLevel > 0}" 
+                                    type="button" 
+                                    class="btn btn-outline-secondary btn-sm"
+                                    @click="setQuantity([[${product.maxStockLevel}]])">
+                                Max (<span th:text="${product.maxStockLevel}">100</span>)
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Indicateur de niveau -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+                            <span>Niveau de stock</span>
+                            <span x-text="getStockLevelText()">Normal</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" 
+                                 :class="getStockLevelClass()"
+                                 :style="'width: ' + getStockLevelPercent() + '%'"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary" x-bind:disabled="showLoading">
+                        <span x-show="showLoading" class="spinner-border spinner-border-sm me-2"></span>
+                        Mettre à jour le stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Ouvrir automatiquement le modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('stockUpdateModal'));
+    modal.show();
+    
+    // Fermer le modal sur succès HTMX
+    document.body.addEventListener('stockUpdated', function() {
+        modal.hide();
+    });
+});
+
+// Composant Alpine.js pour le formulaire
+function stockUpdateForm() {
+    return {
+        showLoading: false,
+        newQuantity: [[${product.stockQuantity}]],
+        minStock: [[${product.minStockLevel}]],
+        maxStock: [[${product.maxStockLevel ?: 1000}]],
+        
+        focusQuantityField() {
+            this.$nextTick(() => {
+                const input = this.$root.querySelector('#newQuantity');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            });
+        },
+        
+        adjustQuantity(amount) {
+            this.newQuantity = Math.max(0, this.newQuantity + amount);
+        },
+        
+        setQuantity(value) {
+            this.newQuantity = Math.max(0, value);
+        },
+        
+        getStockLevelPercent() {
+            if (this.maxStock <= 0) {
+                return this.newQuantity > this.minStock ? 50 : 25;
+            }
+            return Math.min(100, (this.newQuantity / this.maxStock) * 100);
+        },
+        
+        getStockLevelClass() {
+            if (this.newQuantity <= 0) return 'bg-danger';
+            if (this.newQuantity <= this.minStock) return 'bg-warning';
+            return 'bg-success';
+        },
+        
+        getStockLevelText() {
+            if (this.newQuantity <= 0) return 'Rupture';
+            if (this.newQuantity <= this.minStock) return 'Stock bas';
+            if (this.maxStock > 0 && this.newQuantity >= this.maxStock) return 'Stock plein';
+            return 'Normal';
+        }
+    }
+}
+</script>

@@ -1,0 +1,101 @@
+<!--
+  @path src/main/resources/templates/catalog/categories/_categoryRow.html
+  @description Fragment de ligne de tableau pour une catégorie
+-->
+<tr th:fragment="category-row" 
+    th:id="'category-row-' + ${category.id}"
+    class="gc-fade-in">
+    
+    <td>
+        <code th:text="${category.code}" class="text-primary">CAT-2025-001</code>
+    </td>
+    
+    <td>
+        <div class="d-flex align-items-center">
+            <i th:if="${category.iconClass}" 
+               th:class="'bi ' + ${category.iconClass} + ' me-2 text-muted'"></i>
+            <div>
+                <div class="fw-semibold" th:text="${category.name}">Nom de catégorie</div>
+                <small class="text-muted" th:if="${category.level > 0}">
+                    Niveau <span th:text="${category.level + 1}">2</span>
+                </small>
+            </div>
+        </div>
+    </td>
+    
+    <td>
+        <span th:if="${category.parentName}" 
+              th:text="${category.parentName}" 
+              class="badge bg-light text-dark">Catégorie parent</span>
+        <span th:unless="${category.parentName}" 
+              class="text-muted">Racine</span>
+    </td>
+    
+    <td>
+        <span th:if="${category.description}" 
+              th:text="${#strings.abbreviate(category.description, 50)}"
+              th:title="${category.description}">Description courte...</span>
+        <span th:unless="${category.description}" class="text-muted">-</span>
+    </td>
+    
+    <td>
+        <span class="badge bg-info" th:text="${category.productCount}">0</span>
+        <span class="text-muted ms-1">produits</span>
+    </td>
+    
+    <td>
+        <span class="badge bg-secondary" th:text="${category.sortOrder}">0</span>
+    </td>
+    
+    <td>
+        <span th:if="${category.active}" 
+              class="badge bg-success">Actif</span>
+        <span th:unless="${category.active}" 
+              class="badge bg-secondary">Inactif</span>
+    </td>
+    
+    <td class="text-end">
+        <div class="btn-group" role="group">
+            <!-- Bouton voir produits -->
+            <a th:href="@{'/catalog/products?categoryId=' + ${category.id}}" 
+               class="btn btn-sm btn-outline-info"
+               data-bs-toggle="tooltip"
+               title="Voir les produits">
+                <i class="bi bi-box-seam"></i>
+            </a>
+            
+            <!-- Bouton ajouter sous-catégorie -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-primary"
+                    th:attr="hx-get=@{'/catalog/categories/new?parentId=' + ${category.id}}"
+                    hx-target="#modal-container"
+                    data-bs-toggle="tooltip"
+                    title="Ajouter sous-catégorie">
+                <i class="bi bi-plus"></i>
+            </button>
+            
+            <!-- Bouton modifier -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-warning"
+                    th:attr="hx-get=@{'/catalog/categories/' + ${category.id} + '/edit'}"
+                    hx-target="#modal-container"
+                    data-bs-toggle="tooltip"
+                    title="Modifier">
+                <i class="bi bi-pencil"></i>
+            </button>
+            
+            <!-- Bouton supprimer -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-danger"
+                    th:attr="hx-delete=@{'/catalog/categories/' + ${category.id}}"
+                    hx-confirm="Êtes-vous sûr de vouloir supprimer cette catégorie ?"
+                    hx-target="closest tr"
+                    hx-swap="outerHTML"
+                    data-bs-toggle="tooltip"
+                    title="Supprimer"
+                    th:disabled="${category.productCount > 0}">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </td>
+</tr>

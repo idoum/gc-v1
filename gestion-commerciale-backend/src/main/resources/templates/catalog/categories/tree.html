@@ -1,0 +1,213 @@
+<!--
+  @path src/main/resources/templates/catalog/categories/tree.html
+  @description Vue arbre hiérarchique des catégories avec navigation interactive
+-->
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{::scripts})}">
+<head>
+    <title>Arbre des catégories</title>
+</head>
+<body>
+    <th:block th:fragment="content">
+        <!-- En-tête -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="h2 mb-3">
+                    <i class="bi bi-diagram-3 me-2 text-primary"></i>
+                    Arbre des catégories
+                </h1>
+            </div>
+            <div class="col-md-4">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="card bg-primary bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${totalCategories}">0</div>
+                                <small>Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-success bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${activeCategories}">0</div>
+                                <small>Actives</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contrôles -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                onclick="expandAllCategories()">
+                            <i class="bi bi-arrows-expand"></i>
+                            Tout développer
+                        </button>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                onclick="collapseAllCategories()">
+                            <i class="bi bi-arrows-collapse"></i>
+                            Tout réduire
+                        </button>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-primary btn-sm"
+                                hx-get="/catalog/categories/new"
+                                hx-target="#modal-container">
+                            <i class="bi bi-plus"></i>
+                            Nouvelle catégorie
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Arbre des catégories -->
+        <div class="card">
+            <div class="card-body">
+                <div id="category-tree" class="category-tree" 
+                     x-data="categoryTree()" x-init="initTree()">
+                    
+                    <!-- Catégories racines -->
+                    <div th:each="rootCategory : ${categoryTree}" 
+                         class="category-node"
+                         x-data="{expanded: true}">
+                        
+                        <!-- Noeud racine -->
+                        <div class="category-item root-category p-3 mb-2 border rounded"
+                             th:class="${rootCategory.active ? 'border-success bg-light' : 'border-secondary bg-light'}">
+                            
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <!-- Bouton expansion si a des enfants -->
+                                    <button th:if="${rootCategory.hasChildren}" 
+                                            type="button" 
+                                            class="btn btn-sm btn-outline-secondary me-2"
+                                            @click="expanded = !expanded">
+                                        <i class="bi bi-chevron-down" 
+                                           :class="{'rotate-minus-90': !expanded}"></i>
+                                    </button>
+                                    
+                                    <div th:unless="${rootCategory.hasChildren}" class="me-4"></div>
+                                    
+                                    <!-- Icône et nom -->
+                                    <i th:if="${rootCategory.iconClass}" 
+                                       th:class="'bi ' + ${rootCategory.iconClass} + ' me-2 text-primary fs-5'"></i>
+                                    <i th:unless="${rootCategory.iconClass}" 
+                                       class="bi bi-tag me-2 text-primary fs-5"></i>
+                                    
+                                    <div>
+                                        <h6 class="mb-1" th:text="${rootCategory.name}">Nom catégorie</h6>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <code class="text-muted small" th:text="${rootCategory.code}">CAT-001</code>
+                                            <span class="badge bg-info" th:text="${rootCategory.productCount + ' produits'}">0 produits</span>
+                                            <span th:if="${!rootCategory.active}" class="badge bg-secondary">Inactif</span>
+                                        </div>
+                                        <p th:if="${rootCategory.description}" 
+                                           class="small text-muted mb-0 mt-1" 
+                                           th:text="${rootCategory.description}">Description</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="btn-group" role="group">
+                                    <a th:href="@{'/catalog/products?categoryId=' + ${rootCategory.id}}" 
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-box-seam"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary"
+                                            th:attr="hx-get=@{'/catalog/categories/new?parentId=' + ${rootCategory.id}}"
+                                            hx-target="#modal-container">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-warning"
+                                            th:attr="hx-get=@{'/catalog/categories/' + ${rootCategory.id} + '/edit'}"
+                                            hx-target="#modal-container">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enfants -->
+                        <div th:if="${rootCategory.hasChildren}" 
+                             x-show="expanded" 
+                             x-collapse
+                             class="ms-4">
+                            
+                            <div th:each="childCategory : ${rootCategory.children}" 
+                                 class="category-item child-category p-2 mb-2 border rounded bg-white"
+                                 th:class="${childCategory.active ? 'border-primary' : 'border-secondary'}">
+                                
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-3 text-muted">└─</span>
+                                        
+                                        <i th:if="${childCategory.iconClass}" 
+                                           th:class="'bi ' + ${childCategory.iconClass} + ' me-2 text-secondary'"></i>
+                                        <i th:unless="${childCategory.iconClass}" 
+                                           class="bi bi-tag me-2 text-secondary"></i>
+                                        
+                                        <div>
+                                            <h6 class="mb-1" th:text="${childCategory.name}">Sous-catégorie</h6>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <code class="text-muted small" th:text="${childCategory.code}">CAT-002</code>
+                                                <span class="badge bg-info" th:text="${childCategory.productCount + ' produits'}">0 produits</span>
+                                                <span th:if="${!childCategory.active}" class="badge bg-secondary">Inactif</span>
+                                            </div>
+                                            <p th:if="${childCategory.description}" 
+                                               class="small text-muted mb-0 mt-1" 
+                                               th:text="${childCategory.description}">Description</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions enfant -->
+                                    <div class="btn-group" role="group">
+                                        <a th:href="@{'/catalog/products?categoryId=' + ${childCategory.id}}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="bi bi-box-seam"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-warning"
+                                                th:attr="hx-get=@{'/catalog/categories/' + ${childCategory.id} + '/edit'}"
+                                                hx-target="#modal-container">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message si aucune catégorie -->
+                    <div th:if="${#lists.isEmpty(categoryTree)}" class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                        <h5 class="text-muted">Aucune catégorie</h5>
+                        <p class="text-muted">Commencez par créer votre première catégorie</p>
+                        <button type="button" class="btn btn-primary"
+                                hx-get="/catalog/categories/new"
+                                hx-target="#modal-container">
+                            <i class="bi bi-plus"></i>
+                            Créer une catégorie
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+    
+    <th:block th:fragment="scripts">
+        <script th:src="@{/js/pages/catalog/category-tree.js}"></script>
+    </th:block>
+</body>
+</html>

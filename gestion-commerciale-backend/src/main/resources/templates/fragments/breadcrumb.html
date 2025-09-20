@@ -1,0 +1,49 @@
+<!--
+  @path src/main/resources/templates/fragments/breadcrumb.html
+  @description Fragment breadcrumb avec navigation contextuelle
+-->
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+     th:fragment="breadcrumb">
+    <nav aria-label="breadcrumb" th:if="${breadcrumbs != null}">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item" th:each="breadcrumb, iter : ${breadcrumbs}"
+                th:classappend="${iter.last} ? 'active' : ''">
+                <a th:if="${!iter.last}" 
+                   th:href="${breadcrumb.url}" 
+                   th:text="${breadcrumb.label}"
+                   class="text-decoration-none">Label</a>
+                <span th:if="${iter.last}" 
+                      th:text="${breadcrumb.label}"
+                      class="text-muted">Label</span>
+            </li>
+        </ol>
+    </nav>
+    
+    <!-- Actions contextuelles -->
+    <div class="btn-toolbar mb-2 mb-md-0" th:if="${pageActions != null}">
+        <div class="btn-group me-2" th:each="action : ${pageActions}">
+            <button type="button" 
+                    th:class="${'btn btn-sm ' + (action.variant ?: 'btn-outline-secondary')}"
+                    th:attr="hx-get=${action.url}, hx-target=${action.target ?: '#modal-container'}"
+                    th:if="${action.type == 'modal'}">
+                <i th:class="${'bi ' + action.icon}" th:if="${action.icon}"></i>
+                <span th:text="${action.label}">Action</span>
+            </button>
+            
+            <a th:class="${'btn btn-sm ' + (action.variant ?: 'btn-outline-secondary')}"
+               th:href="${action.url}"
+               th:if="${action.type == 'link'}">
+                <i th:class="${'bi ' + action.icon}" th:if="${action.icon}"></i>
+                <span th:text="${action.label}">Action</span>
+            </a>
+            
+            <button type="button"
+                    th:class="${'btn btn-sm ' + (action.variant ?: 'btn-outline-secondary')}"
+                    th:attr="hx-post=${action.url}"
+                    th:if="${action.type == 'action'}">
+                <i th:class="${'bi ' + action.icon}" th:if="${action.icon}"></i>
+                <span th:text="${action.label}">Action</span>
+            </button>
+        </div>
+    </div>
+</div>

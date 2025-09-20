@@ -1,0 +1,102 @@
+<!--
+  @path src/main/resources/templates/crm/contacts/_contactFormModal.html
+  @description Modal de formulaire pour création/édition d'un contact CRM
+-->
+<div class="modal fade" id="contactFormModal" tabindex="-1" th:fragment="contact-form-modal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form th:action="${isEdit ? '/crm/contacts/' + contact.id : '/crm/contacts'}"
+                  method="post"
+                  hx-post th:attr="hx-post=${isEdit ? '/crm/contacts/' + contact.id : '/crm/contacts'}"
+                  hx-target="#contact-table-container"
+                  hx-swap="innerHTML">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2" th:unless="${isEdit}"></i>
+                        <i class="bi bi-person-fill-gear me-2" th:if="${isEdit}"></i>
+                        <span th:text="${isEdit ? 'Modifier le contact' : 'Nouveau contact'}">Nouveau contact</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Civilité</label>
+                            <select class="form-select" name="civility">
+                                <option value="">-</option>
+                                <option th:each="c : ${civilities}" th:value="${c}" th:text="${c}" th:selected="${contact.civility == c}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="firstName" th:value="${contact.firstName}" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Nom <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="lastName" th:value="${contact.lastName}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Client <span class="text-danger">*</span></label>
+                            <select class="form-select" name="customerId" required>
+                                <option value="">Sélectionner un client</option>
+                                <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.companyName}" th:selected="${contact.customerId == c.id}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" th:value="${contact.email}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" class="form-control" name="phone" th:value="${contact.phone}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Mobile</label>
+                            <input type="text" class="form-control" name="mobile" th:value="${contact.mobile}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fonction</label>
+                            <input type="text" class="form-control" name="jobTitle" th:value="${contact.jobTitle}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Département</label>
+                            <input type="text" class="form-control" name="department" th:value="${contact.department}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Statut</label>
+                            <select class="form-select" name="status">
+                                <option th:each="s : ${contactStatuses}" th:value="${s}" th:text="${s}" th:selected="${contact.status == s}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="type">
+                                <option th:each="t : ${contactTypes}" th:value="${t}" th:text="${t}" th:selected="${contact.type == t}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Priorité</label>
+                            <select class="form-select" name="priority">
+                                <option th:each="p : ${contactPriorities}" th:value="${p}" th:text="${p}" th:selected="${contact.priority == p}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Contact principal</label>
+                            <input type="checkbox" class="form-check-input ms-2" name="isPrimary" th:checked="${contact.isPrimary}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="2" th:text="${contact.notes}"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span th:text="${isEdit ? 'Mettre à jour' : 'Créer'}">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

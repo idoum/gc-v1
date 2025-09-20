@@ -1,0 +1,253 @@
+<!--
+  @path src/main/resources/templates/customers/_customerFormModal.html
+  @description Modal de formulaire pour création/édition d'un client
+-->
+<div class="modal fade" id="customerFormModal" tabindex="-1" th:fragment="customer-form-modal"
+     x-data="customerForm()" @shown.bs.modal="focusFirstField()">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form th:action="${isEdit ? '/customers/' + customer.id : '/customers'}" 
+                  method="post"
+                  hx-post th:attr="hx-post=${isEdit ? '/customers/' + customer.id : '/customers'}"
+                  hx-target="#customer-table-container"
+                  hx-swap="innerHTML"
+                  @submit="showLoading = true">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2" th:unless="${isEdit}"></i>
+                        <i class="bi bi-person-gear me-2" th:if="${isEdit}"></i>
+                        <span th:text="${isEdit ? 'Modifier le client' : 'Nouveau client'}">Nouveau client</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Alerte d'erreur -->
+                    <div class="alert alert-danger" th:if="${errorMessage}" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span th:text="${errorMessage}">Message d'erreur</span>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <!-- Code client -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="customerCode">
+                                <span th:text="#{customer.code}">Code client</span>
+                                <i class="bi bi-info-circle ms-1" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Laissez vide pour génération automatique"></i>
+                            </label>
+                            <input type="text" 
+                                   class="form-control gc-form-control"
+                                   th:class="${#fields.hasErrors('code')} ? 'form-control is-invalid' : 'form-control'"
+                                   id="customerCode" 
+                                   name="code"
+                                   th:value="${customer.code}"
+                                   placeholder="CLI-2025-XXXX">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}">
+                                <span th:errors="*{code}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Statut -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="customerStatus" th:text="#{customer.status}">Statut</label>
+                            <select class="form-select" 
+                                    th:class="${#fields.hasErrors('status')} ? 'form-select is-invalid' : 'form-select'"
+                                    id="customerStatus" 
+                                    name="status">
+                                <option value="ACTIVE" 
+                                        th:selected="${customer.status?.name() == 'ACTIVE'}"
+                                        th:text="#{status.active}">Actif</option>
+                                <option value="INACTIVE" 
+                                        th:selected="${customer.status?.name() == 'INACTIVE'}"
+                                        th:text="#{status.inactive}">Inactif</option>
+                                <option value="SUSPENDED" 
+                                        th:selected="${customer.status?.name() == 'SUSPENDED'}"
+                                        th:text="#{status.suspended}">Suspendu</option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('status')}">
+                                <span th:errors="*{status}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Nom de société -->
+                        <div class="col-12">
+                            <label class="form-label" for="companyName">
+                                <span th:text="#{customer.company_name}">Nom de société</span>
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control"
+                                   th:class="${#fields.hasErrors('companyName')} ? 'form-control is-invalid' : 'form-control'"
+                                   id="companyName" 
+                                   name="companyName"
+                                   th:value="${customer.companyName}"
+                                   required
+                                   placeholder="Nom de la société">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('companyName')}">
+                                <span th:errors="*{companyName}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Contact -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="contactFirstName" th:text="#{customer.contact_name} + ' (Prénom)'">Prénom du contact</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="contactFirstName" 
+                                   name="contactFirstName"
+                                   th:value="${customer.contactFirstName}"
+                                   placeholder="Prénom">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label" for="contactLastName" th:text="#{customer.contact_name} + ' (Nom)'">Nom du contact</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="contactLastName" 
+                                   name="contactLastName"
+                                   th:value="${customer.contactLastName}"
+                                   placeholder="Nom">
+                        </div>
+                        
+                        <!-- Email et téléphone -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="email" th:text="#{customer.email}">Email</label>
+                            <input type="email" 
+                                   class="form-control"
+                                   th:class="${#fields.hasErrors('email')} ? 'form-control is-invalid' : 'form-control'"
+                                   id="email" 
+                                   name="email"
+                                   th:value="${customer.email}"
+                                   placeholder="email@exemple.fr">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}">
+                                <span th:errors="*{email}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label" for="phone" th:text="#{customer.phone}">Téléphone</label>
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="phone" 
+                                   name="phone"
+                                   th:value="${customer.phone}"
+                                   placeholder="01.23.45.67.89">
+                        </div>
+                        
+                        <!-- Type et informations légales -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="type" th:text="#{customer.type}">Type</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="COMPANY" 
+                                        th:selected="${customer.type?.name() == 'COMPANY' or customer.type == null}"
+                                        th:text="#{type.company}">Société</option>
+                                <option value="INDIVIDUAL" 
+                                        th:selected="${customer.type?.name() == 'INDIVIDUAL'}"
+                                        th:text="#{type.individual}">Particulier</option>
+                                <option value="ADMINISTRATION" 
+                                        th:selected="${customer.type?.name() == 'ADMINISTRATION'}"
+                                        th:text="#{type.administration}">Administration</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label" for="siret">SIRET</label>
+                            <input type="text" 
+                                   class="form-control"
+                                   th:class="${#fields.hasErrors('siret')} ? 'form-control is-invalid' : 'form-control'"
+                                   id="siret" 
+                                   name="siret"
+                                   th:value="${customer.siret}"
+                                   placeholder="12345678901234">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('siret')}">
+                                <span th:errors="*{siret}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Conditions commerciales -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="paymentTermDays" th:text="#{customer.payment_terms}">Délai de paiement (jours)</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="paymentTermDays" 
+                                   name="paymentTermDays"
+                                   th:value="${customer.paymentTermDays ?: 30}"
+                                   min="0" 
+                                   max="365">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label" for="creditLimit" th:text="#{customer.credit_limit}">Limite de crédit</label>
+                            <div class="input-group">
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="creditLimit" 
+                                       name="creditLimit"
+                                       th:value="${customer.creditLimit}"
+                                       min="0" 
+                                       step="0.01"
+                                       placeholder="0.00">
+                                <span class="input-group-text">€</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="col-12">
+                            <label class="form-label" for="notes">Notes</label>
+                            <textarea class="form-control" 
+                                      id="notes" 
+                                      name="notes"
+                                      rows="3"
+                                      th:text="${customer.notes}"
+                                      placeholder="Notes ou commentaires sur le client..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <span th:text="#{btn.cancel}">Annuler</span>
+                    </button>
+                    <button type="submit" class="btn btn-primary" x-bind:disabled="showLoading">
+                        <span x-show="showLoading" class="spinner-border spinner-border-sm me-2"></span>
+                        <span th:text="${isEdit ? #{btn.save} : 'Créer'}">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Ouvrir automatiquement le modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('customerFormModal'));
+    modal.show();
+    
+    // Fermer le modal sur succès HTMX
+    document.body.addEventListener('customerCreated', function() {
+        modal.hide();
+    });
+    
+    document.body.addEventListener('customerUpdated', function() {
+        modal.hide();
+    });
+});
+
+// Composant Alpine.js pour le formulaire
+function customerForm() {
+    return {
+        showLoading: false,
+        
+        focusFirstField() {
+            this.$nextTick(() => {
+                const firstInput = this.$root.querySelector('input:not([disabled])');
+                if (firstInput) firstInput.focus();
+            });
+        }
+    }
+}
+</script>

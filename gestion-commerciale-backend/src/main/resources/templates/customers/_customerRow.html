@@ -1,0 +1,110 @@
+<!--
+  @path src/main/resources/templates/customers/_customerRow.html
+  @description Fragment de ligne de tableau pour un client
+-->
+<tr th:fragment="customer-row" 
+    th:id="'customer-row-' + ${customer.id}"
+    class="gc-fade-in">
+    
+    <td>
+        <code th:text="${customer.code}" class="text-primary">CLI-2025-0001</code>
+    </td>
+    
+    <td>
+        <div class="fw-semibold" th:text="${customer.companyName}">Nom de société</div>
+        <small class="text-muted" th:if="${customer.siret}" th:text="'SIRET: ' + ${customer.siret}">SIRET: 12345678901234</small>
+    </td>
+    
+    <td>
+        <div th:if="${customer.contactFirstName or customer.contactLastName}">
+            <span th:text="${customer.contactFirstName}">Prénom</span>
+            <span th:text="${customer.contactLastName}">Nom</span>
+        </div>
+        <span class="text-muted" th:unless="${customer.contactFirstName or customer.contactLastName}">-</span>
+    </td>
+    
+    <td>
+        <a th:if="${customer.email}" 
+           th:href="'mailto:' + ${customer.email}"
+           th:text="${customer.email}"
+           class="text-decoration-none">email@example.com</a>
+        <span class="text-muted" th:unless="${customer.email}">-</span>
+    </td>
+    
+    <td>
+        <a th:if="${customer.phone}" 
+           th:href="'tel:' + ${customer.phone}"
+           th:text="${customer.phone}"
+           class="text-decoration-none">01.23.45.67.89</a>
+        <span class="text-muted" th:unless="${customer.phone}">-</span>
+    </td>
+    
+    <td>
+        <span th:switch="${customer.status}" 
+              class="badge">
+            <span th:case="'ACTIVE'" 
+                  class="badge bg-success gc-status-active"
+                  th:text="#{status.active}">Actif</span>
+            <span th:case="'INACTIVE'" 
+                  class="badge bg-secondary gc-status-inactive"
+                  th:text="#{status.inactive}">Inactif</span>
+            <span th:case="'SUSPENDED'" 
+                  class="badge bg-warning gc-status-suspended"
+                  th:text="#{status.suspended}">Suspendu</span>
+            <span th:case="'ARCHIVED'" 
+                  class="badge bg-danger gc-status-archived"
+                  th:text="#{status.archived}">Archivé</span>
+        </span>
+    </td>
+    
+    <td>
+        <span th:switch="${customer.type}">
+            <span th:case="'COMPANY'">
+                <i class="bi bi-building me-1"></i>
+                <span th:text="#{type.company}">Société</span>
+            </span>
+            <span th:case="'INDIVIDUAL'">
+                <i class="bi bi-person me-1"></i>
+                <span th:text="#{type.individual}">Particulier</span>
+            </span>
+            <span th:case="'ADMINISTRATION'">
+                <i class="bi bi-bank me-1"></i>
+                <span th:text="#{type.administration}">Administration</span>
+            </span>
+        </span>
+    </td>
+    
+    <td class="text-end">
+        <div class="btn-group" role="group">
+            <!-- Bouton voir -->
+            <a th:href="@{'/customers/' + ${customer.id}}" 
+               class="btn btn-sm btn-outline-secondary"
+               data-bs-toggle="tooltip"
+               title="Voir les détails">
+                <i class="bi bi-eye"></i>
+            </a>
+            
+            <!-- Bouton modifier -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-primary"
+                    th:attr="hx-get=@{'/customers/' + ${customer.id} + '/edit'}"
+                    hx-target="#modal-container"
+                    data-bs-toggle="tooltip"
+                    th:title="#{btn.edit}">
+                <i class="bi bi-pencil"></i>
+            </button>
+            
+            <!-- Bouton supprimer -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-danger"
+                    th:attr="hx-delete=@{'/customers/' + ${customer.id}}"
+                    hx-confirm="Êtes-vous sûr de vouloir supprimer ce client ?"
+                    hx-target="closest tr"
+                    hx-swap="outerHTML"
+                    data-bs-toggle="tooltip"
+                    th:title="#{btn.delete}">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </td>
+</tr>

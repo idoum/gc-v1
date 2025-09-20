@@ -1,0 +1,178 @@
+<!--
+  @path src/main/resources/templates/catalog/products/_productRow.html
+  @description Fragment de ligne de tableau pour un produit avec gestion stock et prix
+-->
+<tr th:fragment="product-row" 
+    th:id="'product-row-' + ${product.id}"
+    class="gc-fade-in"
+    th:class="${product.outOfStock ? 'table-danger' : (product.lowStock ? 'table-warning' : '')}">
+    
+    <!-- Image produit -->
+    <td class="text-center" style="width: 60px;">
+        <img th:if="${product.thumbnailUrl}" 
+             th:src="${product.thumbnailUrl}" 
+             th:alt="${product.name}"
+             class="img-thumbnail"
+             style="width: 40px; height: 40px; object-fit: cover;">
+        <div th:unless="${product.thumbnailUrl}" 
+             class="bg-light border rounded d-flex align-items-center justify-content-center"
+             style="width: 40px; height: 40px;">
+            <i class="bi bi-image text-muted"></i>
+        </div>
+    </td>
+    
+    <!-- Code produit -->
+    <td>
+        <code th:text="${product.code}" class="text-primary">PRD-2025-0001</code>
+        <div th:if="${product.sku}" class="small text-muted">
+            SKU: <span th:text="${product.sku}">SKU123</span>
+        </div>
+    </td>
+    
+    <!-- Nom et description -->
+    <td>
+        <div class="fw-semibold" th:text="${product.name}">Nom du produit</div>
+        <div th:if="${product.reference}" class="small text-muted">
+            Réf: <span th:text="${product.reference}">REF-001</span>
+        </div>
+        <div th:if="${product.description}" class="small text-muted mt-1">
+            <span th:text="${#strings.abbreviate(product.description, 50)}" 
+                  th:title="${product.description}">Description...</span>
+        </div>
+        
+        <!-- Badges type et statut -->
+        <div class="mt-1">
+            <span th:if="${product.type.name() != 'PRODUCT'}" 
+                  class="badge bg-secondary me-1" 
+                  th:text="${#strings.capitalize(#strings.toLowerCase(product.type))}">Service</span>
+        </div>
+    </td>
+    
+    <!-- Catégorie -->
+    <td>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-tag me-1 text-muted"></i>
+            <a th:href="@{'/catalog/products?categoryId=' + ${product.categoryId}}" 
+               th:text="${product.categoryName}"
+               class="text-decoration-none">Catégorie</a>
+        </div>
+        <div th:if="${product.categoryPath}" class="small text-muted">
+            <span th:text="${product.categoryPath}">Chemin > Catégorie</span>
+        </div>
+    </td>
+    
+    <!-- Prix HT -->
+    <td class="text-end">
+        <div class="fw-semibold" th:text="${#numbers.formatDecimal(product.unitPrice, 1, 2)} + ' €'">999.99 €</div>
+        <div th:if="${product.costPrice != null and product.costPrice > 0}" class="small text-muted">
+            Coût: <span th:text="${#numbers.formatDecimal(product.costPrice, 1, 2)} + ' €'">799.99 €</span>
+        </div>
+    </td>
+    
+    <!-- Prix TTC -->
+    <td class="text-end">
+        <div class="fw-semibold text-success" th:text="${#numbers.formatDecimal(product.priceWithVat, 1, 2)} + ' €'">1199.99 €</div>
+        <div class="small text-muted">
+            TVA <span th:text="${#numbers.formatDecimal(product.vatRate, 1, 1)} + '%'">20.0%</span>
+        </div>
+    </td>
+    
+    <!-- Stock -->
+    <td class="text-center">
+        <div th:if="${product.stockManaged}">
+            <div th:class="${product.outOfStock ? 'text-danger fw-bold' : (product.lowStock ? 'text-warning fw-bold' : 'text-success')}">
+                <span th:text="${product.stockQuantity}">15</span>
+                <span th:text="${product.unit}" class="small text-muted ms-1">pce</span>
+            </div>
+            
+            <!-- Indicateurs visuels -->
+            <div class="mt-1">
+                <i th:if="${product.outOfStock}" 
+                   class="bi bi-exclamation-triangle text-danger" 
+                   data-bs-toggle="tooltip" 
+                   title="Rupture de stock"></i>
+                <i th:if="${product.lowStock and !product.outOfStock}" 
+                   class="bi bi-exclamation-circle text-warning" 
+                   data-bs-toggle="tooltip" 
+                   title="Stock bas"></i>
+                <i th:if="${!product.lowStock and !product.outOfStock and product.stockManaged}" 
+                   class="bi bi-check-circle text-success" 
+                   data-bs-toggle="tooltip" 
+                   title="Stock OK"></i>
+            </div>
+            
+            <!-- Niveaux de stock -->
+            <div class="small text-muted">
+                Min: <span th:text="${product.minStockLevel}">5</span>
+                <span th:if="${product.maxStockLevel > 0}">
+                    / Max: <span th:text="${product.maxStockLevel}">100</span>
+                </span>
+            </div>
+        </div>
+        <div th:unless="${product.stockManaged}" class="text-muted">
+            <i class="bi bi-infinity"></i>
+            <div class="small">Non géré</div>
+        </div>
+    </td>
+    
+    <!-- Statut -->
+    <td>
+        <span th:switch="${product.status.name()}" class="badge">
+            <span th:case="'AVAILABLE'" class="badge bg-success">Disponible</span>
+            <span th:case="'OUT_OF_STOCK'" class="badge bg-danger">Rupture</span>
+            <span th:case="'DISCONTINUED'" class="badge bg-secondary">Discontinué</span>
+            <span th:case="'PENDING'" class="badge bg-warning">En attente</span>
+            <span th:case="'DRAFT'" class="badge bg-light text-dark">Brouillon</span>
+        </span>
+        
+        <div th:unless="${product.active}" class="mt-1">
+            <span class="badge bg-secondary">Inactif</span>
+        </div>
+    </td>
+    
+    <!-- Actions -->
+    <td class="text-end">
+        <div class="btn-group" role="group">
+            <!-- Bouton voir détail -->
+            <a th:href="@{'/catalog/products/' + ${product.id}}" 
+               class="btn btn-sm btn-outline-secondary"
+               data-bs-toggle="tooltip"
+               title="Voir les détails">
+                <i class="bi bi-eye"></i>
+            </a>
+            
+            <!-- Bouton modifier stock (si géré) -->
+            <button th:if="${product.stockManaged}" 
+                    type="button" 
+                    class="btn btn-sm btn-outline-info"
+                    th:attr="hx-get=@{'/catalog/products/' + ${product.id} + '/stock'}"
+                    hx-target="#modal-container"
+                    data-bs-toggle="tooltip"
+                    title="Modifier stock">
+                <i class="bi bi-box-seam"></i>
+            </button>
+            
+            <!-- Bouton modifier -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-primary"
+                    th:attr="hx-get=@{'/catalog/products/' + ${product.id} + '/edit'}"
+                    hx-target="#modal-container"
+                    data-bs-toggle="tooltip"
+                    title="Modifier">
+                <i class="bi bi-pencil"></i>
+            </button>
+            
+            <!-- Bouton supprimer -->
+            <button type="button" 
+                    class="btn btn-sm btn-outline-danger"
+                    th:attr="hx-delete=@{'/catalog/products/' + ${product.id}}"
+                    hx-confirm="Êtes-vous sûr de vouloir supprimer ce produit ?"
+                    hx-target="closest tr"
+                    hx-swap="outerHTML"
+                    data-bs-toggle="tooltip"
+                    title="Supprimer">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </td>
+</tr>

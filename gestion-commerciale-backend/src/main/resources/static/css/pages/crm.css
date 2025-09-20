@@ -1,0 +1,15 @@
+/*
+ * @path src/main/resources/static/css/pages/crm.css
+ * @description Styles spécialisés pour la gestion des contacts CRM
+ */
+.crm-contact-primary {
+    font-weight: 600;
+    color: var(--gc-primary, #0d6efd);
+}
+.crm-contact-lead {
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.85em;
+}

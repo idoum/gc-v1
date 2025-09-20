@@ -1,0 +1,22 @@
+<!--
+  @path src/main/resources/templates/fragments/footer.html
+  @description Fragment footer avec informations de version et liens
+-->
+<footer class="bg-light border-top mt-auto py-3" th:fragment="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <span class="text-muted" th:text="#{app.copyright}">© 2025 Gestion Commerciale</span>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <small class="text-muted">
+                    Version <span th:text="#{app.version}">1.0.0</span>
+                    <span class="mx-1">•</span>
+                    <a href="#" class="text-muted text-decoration-none">Support</a>
+                    <span class="mx-1">•</span>
+                    <a href="#" class="text-muted text-decoration-none">Documentation</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</footer>

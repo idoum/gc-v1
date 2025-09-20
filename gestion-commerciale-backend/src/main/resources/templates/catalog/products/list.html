@@ -1,0 +1,349 @@
+<!--
+  @path src/main/resources/templates/catalog/products/list.html
+  @description Page de liste des produits avec filtres avancés et recherche HTMX
+-->
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{::scripts})}">
+<head>
+    <title>Gestion des produits</title>
+</head>
+<body>
+    <th:block th:fragment="content">
+        <!-- En-tête avec statistiques -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="h2 mb-3">
+                    <i class="bi bi-box-seam me-2 text-primary"></i>
+                    Gestion des produits
+                </h1>
+            </div>
+            <div class="col-md-4">
+                <div class="row g-2">
+                    <div class="col-3">
+                        <div class="card bg-primary bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${totalProducts}">0</div>
+                                <small>Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="card bg-success bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${activeProducts}">0</div>
+                                <small>Actifs</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${lowStockProducts}">0</div>
+                                <small>Stock bas</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="card bg-danger bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${outOfStockProducts}">0</div>
+                                <small>Rupture</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtres avancés -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3" 
+                     x-data="{
+                         search: '[[${search}]]',
+                         active: '[[${active}]]',
+                         categoryId: '[[${categoryId}]]',
+                         status: '[[${status}]]',
+                         type: '[[${type}]]',
+                         minPrice: '[[${minPrice}]]',
+                         maxPrice: '[[${maxPrice}]]',
+                         showAdvanced: false,
+                         
+                         updateFilters() {
+                             const params = new URLSearchParams();
+                             if (this.search) params.append('search', this.search);
+                             if (this.active !== '') params.append('active', this.active);
+                             if (this.categoryId !== '') params.append('categoryId', this.categoryId);
+                             if (this.status !== '') params.append('status', this.status);
+                             if (this.type !== '') params.append('type', this.type);
+                             if (this.minPrice) params.append('minPrice', this.minPrice);
+                             if (this.maxPrice) params.append('maxPrice', this.maxPrice);
+                             params.append('page', '0');
+                             
+                             htmx.ajax('GET', '/catalog/products?' + params.toString(), {
+                                 target: '#product-table-container',
+                                 swap: 'innerHTML'
+                             });
+                         }
+                     }">
+                    
+                    <!-- Ligne 1 : Filtres principaux -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   placeholder="Rechercher un produit..."
+                                   x-model="search"
+                                   @input.debounce.300ms="updateFilters()">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <select class="form-select" 
+                                x-model="categoryId"
+                                @change="updateFilters()">
+                            <option value="">Toutes les catégories</option>
+                            <optgroup th:each="category : ${categories}" th:label="${category.name}">
+                                <option th:value="${category.id}" th:text="${category.name}">Catégorie</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" 
+                                x-model="status"
+                                @change="updateFilters()">
+                            <option value="">Tous statuts</option>
+                            <option th:each="statusOption : ${productStatuses}" 
+                                    th:value="${statusOption}" 
+                                    th:text="${#strings.capitalize(#strings.toLowerCase(statusOption))}">Statut</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <button type="button" 
+                                class="btn btn-outline-secondary w-100"
+                                @click="showAdvanced = !showAdvanced">
+                            <i class="bi bi-funnel"></i>
+                            <span x-text="showAdvanced ? 'Moins' : 'Plus'">Plus</span>
+                        </button>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <button type="button" 
+                                class="btn btn-primary w-100"
+                                hx-get="/catalog/products/new"
+                                hx-target="#modal-container">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Ligne 2 : Filtres avancés -->
+                    <div x-show="showAdvanced" 
+                         x-collapse 
+                         class="col-12">
+                        <div class="row g-3 pt-3 border-top">
+                            <div class="col-md-2">
+                                <select class="form-select" 
+                                        x-model="active"
+                                        @change="updateFilters()">
+                                    <option value="">Tous produits</option>
+                                    <option value="true">Actifs uniquement</option>
+                                    <option value="false">Inactifs</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <select class="form-select" 
+                                        x-model="type"
+                                        @change="updateFilters()">
+                                    <option value="">Tous types</option>
+                                    <option th:each="typeOption : ${productTypes}" 
+                                            th:value="${typeOption}" 
+                                            th:text="${#strings.capitalize(#strings.toLowerCase(typeOption))}">Type</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" 
+                                           class="form-control"
+                                           placeholder="Prix min"
+                                           x-model="minPrice"
+                                           @input.debounce.500ms="updateFilters()"
+                                           min="0" 
+                                           step="0.01">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" 
+                                           class="form-control"
+                                           placeholder="Prix max"
+                                           x-model="maxPrice"
+                                           @input.debounce.500ms="updateFilters()"
+                                           min="0" 
+                                           step="0.01">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 text-end">
+                                <button type="button" 
+                                        class="btn btn-outline-secondary me-2"
+                                        @click="search=''; active=''; categoryId=''; status=''; type=''; minPrice=''; maxPrice=''; updateFilters()">
+                                    <i class="bi bi-x-circle"></i>
+                                    Réinitialiser
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-outline-primary"
+                                        onclick="exportProducts()">
+                                    <i class="bi bi-download"></i>
+                                    Exporter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tableau des produits -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="product-table-container" 
+                     hx-trigger="productCreated, productUpdated, productDeleted, stockUpdated from:body"
+                     hx-get="/catalog/products"
+                     hx-include="[x-data]">
+                    
+                    <th:block th:fragment="product-table">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 gc-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>
+                                            <a href="#" class="text-decoration-none text-dark"
+                                               th:href="@{/catalog/products(
+                                                   search=${search}, 
+                                                   active=${active}, 
+                                                   categoryId=${categoryId},
+                                                   status=${status},
+                                                   type=${type},
+                                                   minPrice=${minPrice},
+                                                   maxPrice=${maxPrice},
+                                                   sort='code',
+                                                   direction=${currentSort == 'code' and currentDirection == 'asc' ? 'desc' : 'asc'}
+                                               )}">
+                                                Code
+                                                <i class="bi bi-chevron-up" th:if="${currentSort == 'code' and currentDirection == 'asc'}"></i>
+                                                <i class="bi bi-chevron-down" th:if="${currentSort == 'code' and currentDirection == 'desc'}"></i>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" class="text-decoration-none text-dark"
+                                               th:href="@{/catalog/products(
+                                                   search=${search}, 
+                                                   active=${active}, 
+                                                   categoryId=${categoryId},
+                                                   status=${status},
+                                                   type=${type},
+                                                   minPrice=${minPrice},
+                                                   maxPrice=${maxPrice},
+                                                   sort='name',
+                                                   direction=${currentSort == 'name' and currentDirection == 'asc' ? 'desc' : 'asc'}
+                                               )}">
+                                                Nom
+                                                <i class="bi bi-chevron-up" th:if="${currentSort == 'name' and currentDirection == 'asc'}"></i>
+                                                <i class="bi bi-chevron-down" th:if="${currentSort == 'name' and currentDirection == 'desc'}"></i>
+                                            </a>
+                                        </th>
+                                        <th>Catégorie</th>
+                                        <th>Prix HT</th>
+                                        <th>Prix TTC</th>
+                                        <th>Stock</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="product : ${products.content}"
+                                        th:replace="~{catalog/products/_productRow :: product-row}">
+                                    </tr>
+                                    
+                                    <!-- Message si aucun résultat -->
+                                    <tr th:if="${products.content.isEmpty()}">
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                            Aucun produit trouvé
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination similaire aux catégories -->
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top" 
+                             th:if="${products.totalPages > 1}">
+                            <!-- Pagination simplifiée pour éviter la répétition -->
+                            <div class="text-muted">
+                                Affichage de <span th:text="${products.number * products.size + 1}">1</span>
+                                à <span th:text="${T(java.lang.Math).min((products.number + 1) * products.size, products.totalElements)}">20</span>
+                                sur <span th:text="${products.totalElements}">100</span> produits
+                            </div>
+                            
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <!-- Navigation pagination -->
+                                    <li class="page-item" th:classappend="${products.first} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/products(search=${search}, active=${active}, categoryId=${categoryId}, status=${status}, type=${type}, minPrice=${minPrice}, maxPrice=${maxPrice}, page=0, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#product-table-container">Premier</a>
+                                    </li>
+                                    <li class="page-item" th:classappend="${products.first} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/products(search=${search}, active=${active}, categoryId=${categoryId}, status=${status}, type=${type}, minPrice=${minPrice}, maxPrice=${maxPrice}, page=${products.number - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#product-table-container">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item" 
+                                        th:each="pageNum : ${#numbers.sequence(T(java.lang.Math).max(0, products.number - 2), T(java.lang.Math).min(products.totalPages - 1, products.number + 2))}"
+                                        th:classappend="${pageNum == products.number} ? 'active'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/products(search=${search}, active=${active}, categoryId=${categoryId}, status=${status}, type=${type}, minPrice=${minPrice}, maxPrice=${maxPrice}, page=${pageNum}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#product-table-container"
+                                           th:text="${pageNum + 1}">1</a>
+                                    </li>
+                                    <li class="page-item" th:classappend="${products.last} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/products(search=${search}, active=${active}, categoryId=${categoryId}, status=${status}, type=${type}, minPrice=${minPrice}, maxPrice=${maxPrice}, page=${products.number + 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#product-table-container">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item" th:classappend="${products.last} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/products(search=${search}, active=${active}, categoryId=${categoryId}, status=${status}, type=${type}, minPrice=${minPrice}, maxPrice=${maxPrice}, page=${products.totalPages - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#product-table-container">Dernier</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </th:block>
+    
+    <th:block th:fragment="scripts">
+        <script th:src="@{/js/pages/catalog/products.js}"></script>
+    </th:block>
+</body>
+</html>

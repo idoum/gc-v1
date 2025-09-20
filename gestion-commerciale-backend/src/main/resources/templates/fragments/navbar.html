@@ -1,0 +1,104 @@
+<!--
+  @path src/main/resources/templates/fragments/navbar.html
+  @description Fragment navbar avec sélecteurs de langue et thème
+-->
+<nav class="navbar navbar-expand-lg gc-navbar sticky-top" th:fragment="navbar">
+    <div class="container-fluid">
+        <!-- Logo et nom de l'application -->
+        <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+            <i class="bi bi-shop me-2 fs-4 text-primary"></i>
+            <span th:text="#{app.name}" class="fw-bold">Gestion Commerciale</span>
+        </a>
+        
+        <!-- Bouton mobile pour sidebar -->
+        <button class="navbar-toggler d-lg-none" type="button" 
+                onclick="toggleMobileSidebar()">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Menu utilisateur et paramètres -->
+        <div class="navbar-nav ms-auto d-flex flex-row">
+            <!-- Sélecteur de langue -->
+            <div class="nav-item dropdown gc-language-selector me-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" 
+                        type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-globe"></i>
+                    <span class="d-none d-sm-inline ms-1" 
+                          th:text="${#locale.language == 'fr' ? 'FR' : 'EN'}">FR</span>
+                </button>
+                <ul class="dropdown-menu gc-language-dropdown">
+                    <li>
+                        <a class="dropdown-item" 
+                           th:href="@{/change-language(lang='fr', returnUrl=${#httpServletRequest.requestURI})}">
+                            <i class="bi bi-flag"></i> <span th:text="#{language.french}">Français</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" 
+                           th:href="@{/change-language(lang='en', returnUrl=${#httpServletRequest.requestURI})}">
+                            <i class="bi bi-flag"></i> <span th:text="#{language.english}">English</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Sélecteur de thème -->
+            <div class="nav-item dropdown me-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" 
+                        type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-palette"></i>
+                    <span class="d-none d-sm-inline ms-1" id="current-theme-text">Clair</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <button class="dropdown-item" data-gc-theme="light">
+                            <i class="bi bi-sun"></i> <span th:text="#{theme.light}">Thème clair</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="dropdown-item" data-gc-theme="dark">
+                            <i class="bi bi-moon"></i> <span th:text="#{theme.dark}">Thème sombre</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button class="dropdown-item" data-gc-theme="auto">
+                            <i class="bi bi-circle-half"></i> <span th:text="#{theme.system}">Automatique</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Menu utilisateur -->
+            <div class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                <button class="btn btn-outline-primary dropdown-toggle" 
+                        type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                    <span class="d-none d-sm-inline ms-1" sec:authentication="name">Utilisateur</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header" th:text="#{nav.settings}">Paramètres</h6></li>
+                    <li>
+                        <a class="dropdown-item" th:href="@{/profile}">
+                            <i class="bi bi-person"></i> Profil
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right"></i> <span th:text="#{nav.logout}">Déconnexion</span>
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Bouton de connexion si non connecté -->
+            <div class="nav-item" sec:authorize="!isAuthenticated()">
+                <a class="btn btn-primary" th:href="@{/login}">
+                    <i class="bi bi-box-arrow-in-right"></i> <span th:text="#{auth.login}">Connexion</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>

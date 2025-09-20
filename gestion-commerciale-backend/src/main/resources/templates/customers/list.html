@@ -1,0 +1,262 @@
+<!--
+  @path src/main/resources/templates/customers/list.html
+  @description Page de liste des clients avec recherche HTMX et filtres
+-->
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{::scripts})}">
+<head>
+    <title th:text="#{customer.title}">Gestion des clients</title>
+</head>
+<body>
+    <th:block th:fragment="content">
+        <!-- En-tête avec statistiques -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="h2 mb-3">
+                    <i class="bi bi-people me-2 text-primary"></i>
+                    <span th:text="#{customer.list}">Liste des clients</span>
+                </h1>
+            </div>
+            <div class="col-md-4">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="card bg-primary bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${totalCustomers}">0</div>
+                                <small>Total clients</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-success bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${activeCustomers}">0</div>
+                                <small>Actifs</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barre de recherche et filtres -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3" 
+                     x-data="{
+                         search: '[[${search}]]',
+                         status: '[[${status}]]',
+                         type: '[[${type}]]',
+                         
+                         updateFilters() {
+                             const params = new URLSearchParams();
+                             if (this.search) params.append('search', this.search);
+                             if (this.status) params.append('status', this.status);
+                             if (this.type) params.append('type', this.type);
+                             params.append('page', '0');
+                             
+                             htmx.ajax('GET', '/customers?' + params.toString(), {
+                                 target: '#customer-table-container',
+                                 swap: 'innerHTML'
+                             });
+                         }
+                     }">
+                    
+                    <!-- Recherche -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   placeholder="Rechercher un client..."
+                                   x-model="search"
+                                   @input.debounce.300ms="updateFilters()">
+                        </div>
+                    </div>
+                    
+                    <!-- Filtre statut -->
+                    <div class="col-md-3">
+                        <select class="form-select" 
+                                x-model="status"
+                                @change="updateFilters()">
+                            <option value="">Tous les statuts</option>
+                            <option value="ACTIVE" th:text="#{status.active}">Actif</option>
+                            <option value="INACTIVE" th:text="#{status.inactive}">Inactif</option>
+                            <option value="SUSPENDED" th:text="#{status.suspended}">Suspendu</option>
+                            <option value="ARCHIVED" th:text="#{status.archived}">Archivé</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Filtre type -->
+                    <div class="col-md-3">
+                        <select class="form-select"
+                                x-model="type" 
+                                @change="updateFilters()">
+                            <option value="">Tous les types</option>
+                            <option value="COMPANY" th:text="#{type.company}">Société</option>
+                            <option value="INDIVIDUAL" th:text="#{type.individual}">Particulier</option>
+                            <option value="ADMINISTRATION" th:text="#{type.administration}">Administration</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="col-md-2">
+                        <button type="button" 
+                                class="btn btn-primary w-100"
+                                hx-get="/customers/new"
+                                hx-target="#modal-container">
+                            <i class="bi bi-plus"></i>
+                            <span class="d-none d-md-inline" th:text="#{customer.add}">Nouveau</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tableau des clients -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="customer-table-container" 
+                     hx-trigger="customerCreated, customerUpdated, customerDeleted from:body"
+                     hx-get="/customers"
+                     hx-include="[x-data]">
+                    
+                    <th:block th:fragment="customer-table">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 gc-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>
+                                            <a href="#" class="text-decoration-none text-dark"
+                                               th:href="@{/customers(
+                                                   search=${search}, 
+                                                   status=${status}, 
+                                                   type=${type},
+                                                   sort='code',
+                                                   direction=${currentSort == 'code' and currentDirection == 'asc' ? 'desc' : 'asc'}
+                                               )}">
+                                                <span th:text="#{customer.code}">Code</span>
+                                                <i class="bi bi-chevron-up" th:if="${currentSort == 'code' and currentDirection == 'asc'}"></i>
+                                                <i class="bi bi-chevron-down" th:if="${currentSort == 'code' and currentDirection == 'desc'}"></i>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" class="text-decoration-none text-dark"
+                                               th:href="@{/customers(
+                                                   search=${search}, 
+                                                   status=${status}, 
+                                                   type=${type},
+                                                   sort='companyName',
+                                                   direction=${currentSort == 'companyName' and currentDirection == 'asc' ? 'desc' : 'asc'}
+                                               )}">
+                                                <span th:text="#{customer.company_name}">Société</span>
+                                                <i class="bi bi-chevron-up" th:if="${currentSort == 'companyName' and currentDirection == 'asc'}"></i>
+                                                <i class="bi bi-chevron-down" th:if="${currentSort == 'companyName' and currentDirection == 'desc'}"></i>
+                                            </a>
+                                        </th>
+                                        <th th:text="#{customer.contact_name}">Contact</th>
+                                        <th th:text="#{customer.email}">Email</th>
+                                        <th th:text="#{customer.phone}">Téléphone</th>
+                                        <th th:text="#{customer.status}">Statut</th>
+                                        <th th:text="#{customer.type}">Type</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="customer : ${customers.content}"
+                                        th:replace="~{customers/_customerRow :: customer-row}">
+                                    </tr>
+                                    
+                                    <!-- Message si aucun résultat -->
+                                    <tr th:if="${customers.content.isEmpty()}">
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                            <span th:text="#{msg.no_data}">Aucun client trouvé</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top" 
+                             th:if="${customers.totalPages > 1}">
+                            <div class="text-muted">
+                                <span th:text="#{pagination.showing}">Affichage de</span>
+                                <span th:text="${customers.number * customers.size + 1}">1</span>
+                                <span th:text="#{pagination.to}">à</span>
+                                <span th:text="${T(java.lang.Math).min((customers.number + 1) * customers.size, customers.totalElements)}">20</span>
+                                <span th:text="#{pagination.of}">sur</span>
+                                <span th:text="${customers.totalElements}">100</span>
+                                <span th:text="#{pagination.items}">éléments</span>
+                            </div>
+                            
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <!-- Première page -->
+                                    <li class="page-item" th:classappend="${customers.first} ? 'disabled'">
+                                        <a class="page-link" 
+                                           th:href="@{/customers(search=${search}, status=${status}, type=${type}, page=0, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-get th:attr="hx-get=@{/customers(search=${search}, status=${status}, type=${type}, page=0, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#customer-table-container">
+                                            <span th:text="#{pagination.first}">Premier</span>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- Page précédente -->
+                                    <li class="page-item" th:classappend="${customers.first} ? 'disabled'">
+                                        <a class="page-link" 
+                                           th:href="@{/customers(search=${search}, status=${status}, type=${type}, page=${customers.number - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-get th:attr="hx-get=@{/customers(search=${search}, status=${status}, type=${type}, page=${customers.number - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#customer-table-container">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- Numéros de pages -->
+                                    <li class="page-item" 
+                                        th:each="pageNum : ${#numbers.sequence(T(java.lang.Math).max(0, customers.number - 2), T(java.lang.Math).min(customers.totalPages - 1, customers.number + 2))}"
+                                        th:classappend="${pageNum == customers.number} ? 'active'">
+                                        <a class="page-link" 
+                                           th:href="@{/customers(search=${search}, status=${status}, type=${type}, page=${pageNum}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-get th:attr="hx-get=@{/customers(search=${search}, status=${status}, type=${type}, page=${pageNum}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#customer-table-container"
+                                           th:text="${pageNum + 1}">1</a>
+                                    </li>
+                                    
+                                    <!-- Page suivante -->
+                                    <li class="page-item" th:classappend="${customers.last} ? 'disabled'">
+                                        <a class="page-link" 
+                                           th:href="@{/customers(search=${search}, status=${status}, type=${type}, page=${customers.number + 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-get th:attr="hx-get=@{/customers(search=${search}, status=${status}, type=${type}, page=${customers.number + 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#customer-table-container">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- Dernière page -->
+                                    <li class="page-item" th:classappend="${customers.last} ? 'disabled'">
+                                        <a class="page-link" 
+                                           th:href="@{/customers(search=${search}, status=${status}, type=${type}, page=${customers.totalPages - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-get th:attr="hx-get=@{/customers(search=${search}, status=${status}, type=${type}, page=${customers.totalPages - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#customer-table-container">
+                                            <span th:text="#{pagination.last}">Dernier</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </th:block>
+    
+    <th:block th:fragment="scripts">
+        <script th:src="@{/js/pages/customers.js}"></script>
+    </th:block>
+</body>
+</html>

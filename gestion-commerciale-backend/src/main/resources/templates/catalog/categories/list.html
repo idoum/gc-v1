@@ -1,0 +1,262 @@
+<!--
+  @path src/main/resources/templates/catalog/categories/list.html
+  @description Page de liste des catégories avec recherche HTMX et vue hiérarchique
+-->
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{::scripts})}">
+<head>
+    <title>Gestion des catégories</title>
+</head>
+<body>
+    <th:block th:fragment="content">
+        <!-- En-tête avec statistiques -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="h2 mb-3">
+                    <i class="bi bi-tags me-2 text-primary"></i>
+                    Gestion des catégories
+                </h1>
+            </div>
+            <div class="col-md-4">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="card bg-primary bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${totalCategories}">0</div>
+                                <small>Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card bg-success bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${activeCategories}">0</div>
+                                <small>Actives</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card bg-info bg-gradient text-white">
+                            <div class="card-body text-center py-2">
+                                <div class="h4 mb-0" th:text="${rootCategories}">0</div>
+                                <small>Racines</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barre de recherche et filtres -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3" 
+                     x-data="{
+                         search: '[[${search}]]',
+                         active: '[[${active}]]',
+                         parentId: '[[${parentId}]]',
+                         
+                         updateFilters() {
+                             const params = new URLSearchParams();
+                             if (this.search) params.append('search', this.search);
+                             if (this.active !== '') params.append('active', this.active);
+                             if (this.parentId !== '') params.append('parentId', this.parentId);
+                             params.append('page', '0');
+                             
+                             htmx.ajax('GET', '/catalog/categories?' + params.toString(), {
+                                 target: '#category-table-container',
+                                 swap: 'innerHTML'
+                             });
+                         }
+                     }">
+                    
+                    <!-- Recherche -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   placeholder="Rechercher une catégorie..."
+                                   x-model="search"
+                                   @input.debounce.300ms="updateFilters()">
+                        </div>
+                    </div>
+                    
+                    <!-- Filtre statut -->
+                    <div class="col-md-3">
+                        <select class="form-select" 
+                                x-model="active"
+                                @change="updateFilters()">
+                            <option value="">Tous les statuts</option>
+                            <option value="true">Actives uniquement</option>
+                            <option value="false">Inactives uniquement</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Filtre parent -->
+                    <div class="col-md-3">
+                        <select class="form-select"
+                                x-model="parentId" 
+                                @change="updateFilters()">
+                            <option value="">Toutes les catégories</option>
+                            <option value="null">Catégories racines</option>
+                            <optgroup th:each="category : ${categoryTree}" th:label="${category.name}">
+                                <option th:each="child : ${category.children}" 
+                                        th:value="${child.id}" 
+                                        th:text="${child.name}">Sous-catégorie</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="col-md-2">
+                        <button type="button" 
+                                class="btn btn-primary w-100"
+                                hx-get="/catalog/categories/new"
+                                hx-target="#modal-container">
+                            <i class="bi bi-plus"></i>
+                            <span class="d-none d-md-inline">Nouvelle</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tableau des catégories -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="category-table-container" 
+                     hx-trigger="categoryCreated, categoryUpdated, categoryDeleted from:body"
+                     hx-get="/catalog/categories"
+                     hx-include="[x-data]">
+                    
+                    <th:block th:fragment="category-table">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 gc-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>
+                                            <a href="#" class="text-decoration-none text-dark"
+                                               th:href="@{/catalog/categories(
+                                                   search=${search}, 
+                                                   active=${active}, 
+                                                   parentId=${parentId},
+                                                   sort='code',
+                                                   direction=${currentSort == 'code' and currentDirection == 'asc' ? 'desc' : 'asc'}
+                                               )}">
+                                                Code
+                                                <i class="bi bi-chevron-up" th:if="${currentSort == 'code' and currentDirection == 'asc'}"></i>
+                                                <i class="bi bi-chevron-down" th:if="${currentSort == 'code' and currentDirection == 'desc'}"></i>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" class="text-decoration-none text-dark"
+                                               th:href="@{/catalog/categories(
+                                                   search=${search}, 
+                                                   active=${active}, 
+                                                   parentId=${parentId},
+                                                   sort='name',
+                                                   direction=${currentSort == 'name' and currentDirection == 'asc' ? 'desc' : 'asc'}
+                                               )}">
+                                                Nom
+                                                <i class="bi bi-chevron-up" th:if="${currentSort == 'name' and currentDirection == 'asc'}"></i>
+                                                <i class="bi bi-chevron-down" th:if="${currentSort == 'name' and currentDirection == 'desc'}"></i>
+                                            </a>
+                                        </th>
+                                        <th>Parent</th>
+                                        <th>Description</th>
+                                        <th>Produits</th>
+                                        <th>Ordre</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="category : ${categories.content}"
+                                        th:replace="~{catalog/categories/_categoryRow :: category-row}">
+                                    </tr>
+                                    
+                                    <!-- Message si aucun résultat -->
+                                    <tr th:if="${categories.content.isEmpty()}">
+                                        <td colspan="8" class="text-center text-muted py-4">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                            Aucune catégorie trouvée
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top" 
+                             th:if="${categories.totalPages > 1}">
+                            <div class="text-muted">
+                                Affichage de
+                                <span th:text="${categories.number * categories.size + 1}">1</span>
+                                à
+                                <span th:text="${T(java.lang.Math).min((categories.number + 1) * categories.size, categories.totalElements)}">20</span>
+                                sur
+                                <span th:text="${categories.totalElements}">100</span>
+                                catégories
+                            </div>
+                            
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <!-- Navigation pagination similaire aux clients -->
+                                    <li class="page-item" th:classappend="${categories.first} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/categories(search=${search}, active=${active}, parentId=${parentId}, page=0, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#category-table-container">
+                                            Premier
+                                        </a>
+                                    </li>
+                                    
+                                    <li class="page-item" th:classappend="${categories.first} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/categories(search=${search}, active=${active}, parentId=${parentId}, page=${categories.number - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#category-table-container">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    
+                                    <li class="page-item" 
+                                        th:each="pageNum : ${#numbers.sequence(T(java.lang.Math).max(0, categories.number - 2), T(java.lang.Math).min(categories.totalPages - 1, categories.number + 2))}"
+                                        th:classappend="${pageNum == categories.number} ? 'active'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/categories(search=${search}, active=${active}, parentId=${parentId}, page=${pageNum}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#category-table-container"
+                                           th:text="${pageNum + 1}">1</a>
+                                    </li>
+                                    
+                                    <li class="page-item" th:classappend="${categories.last} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/categories(search=${search}, active=${active}, parentId=${parentId}, page=${categories.number + 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#category-table-container">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    
+                                    <li class="page-item" th:classappend="${categories.last} ? 'disabled'">
+                                        <a class="page-link" 
+                                           hx-get th:attr="hx-get=@{/catalog/categories(search=${search}, active=${active}, parentId=${parentId}, page=${categories.totalPages - 1}, sort=${currentSort}, direction=${currentDirection})}"
+                                           hx-target="#category-table-container">
+                                            Dernier
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </th:block>
+    
+    <th:block th:fragment="scripts">
+        <script th:src="@{/js/pages/catalog/categories.js}"></script>
+    </th:block>
+</body>
+</html>

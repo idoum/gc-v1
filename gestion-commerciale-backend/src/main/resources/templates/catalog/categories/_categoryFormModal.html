@@ -1,0 +1,212 @@
+<!--
+  @path src/main/resources/templates/catalog/categories/_categoryFormModal.html
+  @description Modal de formulaire pour création/édition d'une catégorie
+-->
+<div class="modal fade" id="categoryFormModal" tabindex="-1" th:fragment="category-form-modal"
+     x-data="categoryForm()" @shown.bs.modal="focusFirstField()">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form th:action="${isEdit ? '/catalog/categories/' + category.id : '/catalog/categories'}" 
+                  method="post"
+                  hx-post th:attr="hx-post=${isEdit ? '/catalog/categories/' + category.id : '/catalog/categories'}"
+                  hx-target="#category-table-container"
+                  hx-swap="innerHTML"
+                  @submit="showLoading = true">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-tags me-2" th:unless="${isEdit}"></i>
+                        <i class="bi bi-tag-fill me-2" th:if="${isEdit}"></i>
+                        <span th:text="${isEdit ? 'Modifier la catégorie' : 'Nouvelle catégorie'}">Nouvelle catégorie</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Alerte d'erreur -->
+                    <div class="alert alert-danger" th:if="${errorMessage}" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span th:text="${errorMessage}">Message d'erreur</span>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <!-- Code catégorie -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="categoryCode">
+                                Code catégorie
+                                <i class="bi bi-info-circle ms-1" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Laissez vide pour génération automatique"></i>
+                            </label>
+                            <input type="text" 
+                                   class="form-control"
+                                   th:class="${#fields.hasErrors('code')} ? 'form-control is-invalid' : 'form-control'"
+                                   id="categoryCode" 
+                                   name="code"
+                                   th:value="${category.code}"
+                                   placeholder="CAT-2025-XXX">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}">
+                                <span th:errors="*{code}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Statut -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="categoryActive">Statut</label>
+                            <select class="form-select" id="categoryActive" name="active">
+                                <option value="true" th:selected="${category.active == true}">Actif</option>
+                                <option value="false" th:selected="${category.active == false}">Inactif</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Nom -->
+                        <div class="col-12">
+                            <label class="form-label" for="categoryName">
+                                Nom de la catégorie
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control"
+                                   th:class="${#fields.hasErrors('name')} ? 'form-control is-invalid' : 'form-control'"
+                                   id="categoryName" 
+                                   name="name"
+                                   th:value="${category.name}"
+                                   required
+                                   placeholder="Nom de la catégorie">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}">
+                                <span th:errors="*{name}">Erreur de validation</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Catégorie parent -->
+                        <div class="col-md-8">
+                            <label class="form-label" for="categoryParent">Catégorie parent</label>
+                            <select class="form-select" id="categoryParent" name="parentId">
+                                <option value="">Aucune (catégorie racine)</option>
+                                <optgroup th:each="rootCategory : ${categoryTree}" th:label="${rootCategory.name}">
+                                    <option th:value="${rootCategory.id}" 
+                                            th:selected="${category.parentId == rootCategory.id}"
+                                            th:text="${rootCategory.name}"
+                                            th:disabled="${isEdit and category.id == rootCategory.id}">Catégorie racine</option>
+                                    <option th:each="child : ${rootCategory.children}"
+                                            th:value="${child.id}" 
+                                            th:selected="${category.parentId == child.id}"
+                                            th:text="'  └ ' + ${child.name}"
+                                            th:disabled="${isEdit and category.id == child.id}">Sous-catégorie</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        
+                        <!-- Ordre de tri -->
+                        <div class="col-md-4">
+                            <label class="form-label" for="categorySortOrder">Ordre de tri</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="categorySortOrder" 
+                                   name="sortOrder"
+                                   th:value="${category.sortOrder ?: 0}"
+                                   min="0" 
+                                   step="10">
+                            <div class="form-text">Ordre d'affichage (0 = premier)</div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label class="form-label" for="categoryDescription">Description</label>
+                            <textarea class="form-control" 
+                                      id="categoryDescription" 
+                                      name="description"
+                                      rows="3"
+                                      th:text="${category.description}"
+                                      placeholder="Description de la catégorie..."></textarea>
+                        </div>
+                        
+                        <!-- Icône -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="categoryIcon">Icône Bootstrap</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i th:class="${category.iconClass != null ? 'bi ' + category.iconClass : 'bi bi-tag'}" 
+                                       id="iconPreview"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="categoryIcon" 
+                                       name="iconClass"
+                                       th:value="${category.iconClass}"
+                                       placeholder="bi-tag"
+                                       @input="updateIconPreview($event.target.value)">
+                            </div>
+                            <div class="form-text">
+                                Exemples : bi-laptop, bi-house, bi-box, bi-gear
+                                <a href="https://icons.getbootstrap.com/" target="_blank" class="ms-2">
+                                    <i class="bi bi-box-arrow-up-right"></i> Parcourir les icônes
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- URL image -->
+                        <div class="col-md-6">
+                            <label class="form-label" for="categoryImage">URL de l'image</label>
+                            <input type="url" 
+                                   class="form-control" 
+                                   id="categoryImage" 
+                                   name="imageUrl"
+                                   th:value="${category.imageUrl}"
+                                   placeholder="https://exemple.com/image.jpg">
+                            <div class="form-text">Image d'illustration de la catégorie</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary" x-bind:disabled="showLoading">
+                        <span x-show="showLoading" class="spinner-border spinner-border-sm me-2"></span>
+                        <span th:text="${isEdit ? 'Mettre à jour' : 'Créer'}">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Ouvrir automatiquement le modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('categoryFormModal'));
+    modal.show();
+    
+    // Fermer le modal sur succès HTMX
+    document.body.addEventListener('categoryCreated', function() {
+        modal.hide();
+    });
+    
+    document.body.addEventListener('categoryUpdated', function() {
+        modal.hide();
+    });
+});
+
+// Composant Alpine.js pour le formulaire
+function categoryForm() {
+    return {
+        showLoading: false,
+        
+        focusFirstField() {
+            this.$nextTick(() => {
+                const firstInput = this.$root.querySelector('input:not([disabled])');
+                if (firstInput) firstInput.focus();
+            });
+        },
+        
+        updateIconPreview(iconClass) {
+            const preview = document.getElementById('iconPreview');
+            if (preview) {
+                preview.className = iconClass ? 'bi ' + iconClass : 'bi bi-tag';
+            }
+        }
+    }
+}
+</script>

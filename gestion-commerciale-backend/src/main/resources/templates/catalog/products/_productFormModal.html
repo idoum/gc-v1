@@ -1,0 +1,535 @@
+<!--
+  @path src/main/resources/templates/catalog/products/_productFormModal.html
+  @description Modal de formulaire pour création/édition d'un produit avec calculs automatiques
+-->
+<div class="modal fade" id="productFormModal" tabindex="-1" th:fragment="product-form-modal"
+     x-data="productForm()" @shown.bs.modal="focusFirstField(); calculatePrices()">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form th:action="${isEdit ? '/catalog/products/' + product.id : '/catalog/products'}" 
+                  method="post"
+                  hx-post th:attr="hx-post=${isEdit ? '/catalog/products/' + product.id : '/catalog/products'}"
+                  hx-target="#product-table-container"
+                  hx-swap="innerHTML"
+                  @submit="showLoading = true">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-seam me-2" th:unless="${isEdit}"></i>
+                        <i class="bi bi-box-seam-fill me-2" th:if="${isEdit}"></i>
+                        <span th:text="${isEdit ? 'Modifier le produit' : 'Nouveau produit'}">Nouveau produit</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Alerte d'erreur -->
+                    <div class="alert alert-danger" th:if="${errorMessage}" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span th:text="${errorMessage}">Message d'erreur</span>
+                    </div>
+                    
+                    <!-- Onglets -->
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab">
+                                <i class="bi bi-info-circle me-1"></i>Général
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pricing-tab">
+                                <i class="bi bi-currency-euro me-1"></i>Prix & TVA
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#stock-tab">
+                                <i class="bi bi-box me-1"></i>Stock
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#details-tab">
+                                <i class="bi bi-gear me-1"></i>Détails
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <!-- Onglet Général -->
+                        <div class="tab-pane fade show active" id="general-tab">
+                            <div class="row g-3">
+                                <!-- Code produit -->
+                                <div class="col-md-4">
+                                    <label class="form-label" for="productCode">
+                                        Code produit
+                                        <i class="bi bi-info-circle ms-1" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Laissez vide pour génération automatique"></i>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control"
+                                           th:class="${#fields.hasErrors('code')} ? 'form-control is-invalid' : 'form-control'"
+                                           id="productCode" 
+                                           name="code"
+                                           th:value="${product.code}"
+                                           placeholder="PRD-2025-XXXX">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}">
+                                        <span th:errors="*{code}">Erreur de validation</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Référence -->
+                                <div class="col-md-4">
+                                    <label class="form-label" for="productReference">Référence</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="productReference" 
+                                           name="reference"
+                                           th:value="${product.reference}"
+                                           placeholder="REF-PROD-001">
+                                </div>
+                                
+                                <!-- SKU -->
+                                <div class="col-md-4">
+                                    <label class="form-label" for="productSku">SKU</label>
+                                    <input type="text" 
+                                           class="form-control"
+                                           th:class="${#fields.hasErrors('sku')} ? 'form-control is-invalid' : 'form-control'"
+                                           id="productSku" 
+                                           name="sku"
+                                           th:value="${product.sku}"
+                                           placeholder="SKU-UNIQUE-001">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('sku')}">
+                                        <span th:errors="*{sku}">Erreur de validation</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Nom -->
+                                <div class="col-12">
+                                    <label class="form-label" for="productName">
+                                        Nom du produit
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control"
+                                           th:class="${#fields.hasErrors('name')} ? 'form-control is-invalid' : 'form-control'"
+                                           id="productName" 
+                                           name="name"
+                                           th:value="${product.name}"
+                                           required
+                                           placeholder="Nom du produit">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}">
+                                        <span th:errors="*{name}">Erreur de validation</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Catégorie -->
+                                <div class="col-md-6">
+                                    <label class="form-label" for="productCategory">
+                                        Catégorie
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select"
+                                            th:class="${#fields.hasErrors('categoryId')} ? 'form-select is-invalid' : 'form-select'"
+                                            id="productCategory" 
+                                            name="categoryId"
+                                            required>
+                                        <option value="">Sélectionner une catégorie</option>
+                                        <optgroup th:each="category : ${categories}" th:label="${category.name}">
+                                            <option th:value="${category.id}" 
+                                                    th:selected="${product.categoryId == category.id}"
+                                                    th:text="${category.name}">Catégorie</option>
+                                        </optgroup>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('categoryId')}">
+                                        <span th:errors="*{categoryId}">Erreur de validation</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Type et statut -->
+                                <div class="col-md-3">
+                                    <label class="form-label" for="productType">Type</label>
+                                    <select class="form-select" id="productType" name="type">
+                                        <option th:each="typeOption : ${productTypes}" 
+                                                th:value="${typeOption}" 
+                                                th:selected="${product.type?.name() == typeOption}"
+                                                th:text="${#strings.capitalize(#strings.toLowerCase(typeOption))}">Type</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <label class="form-label" for="productStatus">Statut</label>
+                                    <select class="form-select" id="productStatus" name="status">
+                                        <option th:each="statusOption : ${productStatuses}" 
+                                                th:value="${statusOption}" 
+                                                th:selected="${product.status?.name() == statusOption}"
+                                                th:text="${#strings.capitalize(#strings.toLowerCase(statusOption))}">Statut</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Description -->
+                                <div class="col-12">
+                                    <label class="form-label" for="productDescription">Description</label>
+                                    <textarea class="form-control" 
+                                              id="productDescription" 
+                                              name="description"
+                                              rows="4"
+                                              th:text="${product.description}"
+                                              placeholder="Description détaillée du produit..."></textarea>
+                                </div>
+                                
+                                <!-- Actif -->
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="productActive" 
+                                               name="active"
+                                               value="true"
+                                               th:checked="${product.active == true}">
+                                        <label class="form-check-label" for="productActive">
+                                            Produit actif
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Onglet Prix & TVA -->
+                        <div class="tab-pane fade" id="pricing-tab">
+                            <div class="row g-3">
+                                <!-- Prix unitaire HT -->
+                                <div class="col-md-4">
+                                    <label class="form-label" for="productUnitPrice">
+                                        Prix unitaire HT
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control"
+                                               th:class="${#fields.hasErrors('unitPrice')} ? 'form-control is-invalid' : 'form-control'"
+                                               id="productUnitPrice" 
+                                               name="unitPrice"
+                                               th:value="${product.unitPrice}"
+                                               x-model.number="unitPrice"
+                                               @input="calculatePrices()"
+                                               required
+                                               min="0" 
+                                               step="0.01"
+                                               placeholder="0.00">
+                                        <span class="input-group-text">€</span>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('unitPrice')}">
+                                            <span th:errors="*{unitPrice}">Erreur de validation</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Prix de revient -->
+                                <div class="col-md-4">
+                                    <label class="form-label" for="productCostPrice">Prix de revient</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="productCostPrice" 
+                                               name="costPrice"
+                                               th:value="${product.costPrice}"
+                                               x-model.number="costPrice"
+                                               @input="calculateMargin()"
+                                               min="0" 
+                                               step="0.01"
+                                               placeholder="0.00">
+                                        <span class="input-group-text">€</span>
+                                    </div>
+                                    <div class="form-text">
+                                        Marge: <span x-text="marginText">-</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Taux TVA -->
+                                <div class="col-md-4">
+                                    <label class="form-label" for="productVatRate">Taux TVA</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="productVatRate" 
+                                               name="vatRate"
+                                               th:value="${product.vatRate ?: 20.00}"
+                                               x-model.number="vatRate"
+                                               @input="calculatePrices()"
+                                               min="0" 
+                                               max="100"
+                                               step="0.01"
+                                               placeholder="20.00">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Calculs automatiques -->
+                                <div class="col-12">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <i class="bi bi-calculator me-1"></i>
+                                                Calculs automatiques
+                                            </h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="text-muted small">Montant TVA</div>
+                                                    <div class="fw-bold" x-text="vatAmount + ' €'">0.00 €</div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="text-muted small">Prix TTC</div>
+                                                    <div class="fw-bold text-success" x-text="priceWithVat + ' €'">0.00 €</div>
+                                                </div>
+                                                <div class="col-md-4" x-show="costPrice > 0">
+                                                    <div class="text-muted small">Marge brute</div>
+                                                    <div class="fw-bold" 
+                                                         :class="margin >= 0 ? 'text-success' : 'text-danger'"
+                                                         x-text="marginAmount + ' €'">0.00 €</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Onglet Stock -->
+                        <div class="tab-pane fade" id="stock-tab">
+                            <div class="row g-3">
+                                <!-- Gestion stock -->
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="productStockManaged" 
+                                               name="stockManaged"
+                                               x-model="stockManaged"
+                                               th:checked="${product.stockManaged == true}">
+                                        <label class="form-check-label" for="productStockManaged">
+                                            Gestion de stock activée
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Champs stock (si géré) -->
+                                <div x-show="stockManaged" class="col-12">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label" for="productStockQuantity">Quantité actuelle</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="productStockQuantity" 
+                                                   name="stockQuantity"
+                                                   th:value="${product.stockQuantity ?: 0}"
+                                                   min="0">
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label class="form-label" for="productMinStock">Stock minimum</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="productMinStock" 
+                                                   name="minStockLevel"
+                                                   th:value="${product.minStockLevel ?: 0}"
+                                                   min="0">
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label class="form-label" for="productMaxStock">Stock maximum</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="productMaxStock" 
+                                                   name="maxStockLevel"
+                                                   th:value="${product.maxStockLevel ?: 0}"
+                                                   min="0">
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label class="form-label" for="productUnit">Unité</label>
+                                            <select class="form-select" id="productUnit" name="unit">
+                                                <option value="pce" th:selected="${product.unit == 'pce'}">Pièce</option>
+                                                <option value="kg" th:selected="${product.unit == 'kg'}">Kilogramme</option>
+                                                <option value="l" th:selected="${product.unit == 'l'}">Litre</option>
+                                                <option value="m" th:selected="${product.unit == 'm'}">Mètre</option>
+                                                <option value="m2" th:selected="${product.unit == 'm2'}">Mètre carré</option>
+                                                <option value="lot" th:selected="${product.unit == 'lot'}">Lot</option>
+                                                <option value="heure" th:selected="${product.unit == 'heure'}">Heure</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Onglet Détails -->
+                        <div class="tab-pane fade" id="details-tab">
+                            <div class="row g-3">
+                                <!-- EAN -->
+                                <div class="col-md-6">
+                                    <label class="form-label" for="productEan">Code EAN</label>
+                                    <input type="text" 
+                                           class="form-control"
+                                           th:class="${#fields.hasErrors('ean')} ? 'form-control is-invalid' : 'form-control'"
+                                           id="productEan" 
+                                           name="ean"
+                                           th:value="${product.ean}"
+                                           placeholder="1234567890123">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('ean')}">
+                                        <span th:errors="*{ean}">Erreur de validation</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Poids -->
+                                <div class="col-md-3">
+                                    <label class="form-label" for="productWeight">Poids</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="productWeight" 
+                                               name="weight"
+                                               th:value="${product.weight}"
+                                               min="0" 
+                                               step="0.001"
+                                               placeholder="0.000">
+                                        <select class="form-select" name="weightUnit" style="max-width: 80px;">
+                                            <option value="g" th:selected="${product.weightUnit == 'g'}">g</option>
+                                            <option value="kg" th:selected="${product.weightUnit == 'kg' or product.weightUnit == null}">kg</option>
+                                            <option value="t" th:selected="${product.weightUnit == 't'}">t</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Dimensions -->
+                                <div class="col-md-3">
+                                    <label class="form-label">Dimensions (L×l×h)</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control form-control-sm" 
+                                               name="length"
+                                               th:value="${product.length}"
+                                               min="0" 
+                                               step="0.01"
+                                               placeholder="L">
+                                        <span class="input-group-text">×</span>
+                                        <input type="number" 
+                                               class="form-control form-control-sm" 
+                                               name="width"
+                                               th:value="${product.width}"
+                                               min="0" 
+                                               step="0.01"
+                                               placeholder="l">
+                                        <span class="input-group-text">×</span>
+                                        <input type="number" 
+                                               class="form-control form-control-sm" 
+                                               name="height"
+                                               th:value="${product.height}"
+                                               min="0" 
+                                               step="0.01"
+                                               placeholder="h">
+                                        <select class="form-select form-select-sm" name="dimensionUnit" style="max-width: 70px;">
+                                            <option value="mm" th:selected="${product.dimensionUnit == 'mm'}">mm</option>
+                                            <option value="cm" th:selected="${product.dimensionUnit == 'cm' or product.dimensionUnit == null}">cm</option>
+                                            <option value="m" th:selected="${product.dimensionUnit == 'm'}">m</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- URLs -->
+                                <div class="col-md-6">
+                                    <label class="form-label" for="productImageUrl">URL de l'image</label>
+                                    <input type="url" 
+                                           class="form-control" 
+                                           id="productImageUrl" 
+                                           name="imageUrl"
+                                           th:value="${product.imageUrl}"
+                                           placeholder="https://exemple.com/image.jpg">
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label" for="productDocumentUrl">URL du document</label>
+                                    <input type="url" 
+                                           class="form-control" 
+                                           id="productDocumentUrl" 
+                                           name="documentUrl"
+                                           th:value="${product.documentUrl}"
+                                           placeholder="https://exemple.com/fiche-technique.pdf">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary" x-bind:disabled="showLoading">
+                        <span x-show="showLoading" class="spinner-border spinner-border-sm me-2"></span>
+                        <span th:text="${isEdit ? 'Mettre à jour' : 'Créer'}">Enregistrer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Ouvrir automatiquement le modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('productFormModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+    modal.show();
+    
+    // Fermer le modal sur succès HTMX
+    document.body.addEventListener('productCreated', function() {
+        modal.hide();
+    });
+    
+    document.body.addEventListener('productUpdated', function() {
+        modal.hide();
+    });
+});
+
+// Composant Alpine.js pour le formulaire
+function productForm() {
+    return {
+        showLoading: false,
+        stockManaged: false,
+        unitPrice: 0,
+        costPrice: 0,
+        vatRate: 20,
+        priceWithVat: 0,
+        vatAmount: 0,
+        margin: 0,
+        marginAmount: 0,
+        marginText: '-',
+        
+        focusFirstField() {
+            this.$nextTick(() => {
+                const firstInput = this.$root.querySelector('input:not([disabled])');
+                if (firstInput) firstInput.focus();
+            });
+        },
+        
+        calculatePrices() {
+            if (this.unitPrice && this.vatRate) {
+                this.vatAmount = parseFloat((this.unitPrice * this.vatRate / 100).toFixed(2));
+                this.priceWithVat = parseFloat((this.unitPrice + this.vatAmount).toFixed(2));
+            }
+            this.calculateMargin();
+        },
+        
+        calculateMargin() {
+            if (this.unitPrice && this.costPrice) {
+                this.marginAmount = parseFloat((this.unitPrice - this.costPrice).toFixed(2));
+                this.margin = parseFloat(((this.marginAmount / this.unitPrice) * 100).toFixed(1));
+                this.marginText = this.marginAmount + ' € (' + this.margin + '%)';
+            } else {
+                this.marginText = '-';
+            }
+        }
+    }
+}
+</script>

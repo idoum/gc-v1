@@ -1,0 +1,232 @@
+<!--
+  @path src/main/resources/templates/index.html
+  @description Page d'accueil avec support i18n et démonstration des thèmes
+-->
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head>
+    <title th:text="#{nav.home}">Accueil</title>
+</head>
+<body>
+    <th:block th:fragment="content">
+        <!-- En-tête de page -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 mb-0">
+                <i class="bi bi-house-door me-2 text-primary"></i>
+                <span th:text="#{nav.home}">Accueil</span>
+            </h1>
+            <div class="text-muted">
+                <small th:text="#{language.current} + ': ' + (${#locale.language == 'fr'} ? #{language.french} : #{language.english})">
+                    Langue actuelle : Français
+                </small>
+            </div>
+        </div>
+        
+        <!-- Cartes de statistiques -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card gc-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-people fs-1 text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-uppercase text-muted mb-0" th:text="#{nav.customers}">Clients</h6>
+                                <h2 class="mb-0">1,234</h2>
+                                <small class="text-success">
+                                    <i class="bi bi-arrow-up"></i> +12% ce mois
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6">
+                <div class="card gc-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-box-seam fs-1 text-info"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-uppercase text-muted mb-0" th:text="#{nav.products}">Produits</h6>
+                                <h2 class="mb-0">567</h2>
+                                <small class="text-info">
+                                    <i class="bi bi-arrow-right"></i> +3 nouveaux
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6">
+                <div class="card gc-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-cart3 fs-1 text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-uppercase text-muted mb-0" th:text="#{nav.orders}">Commandes</h6>
+                                <h2 class="mb-0">89</h2>
+                                <small class="text-warning">
+                                    <i class="bi bi-clock"></i> 15 en attente
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6">
+                <div class="card gc-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-file-earmark-text fs-1 text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-uppercase text-muted mb-0" th:text="#{nav.invoices}">Factures</h6>
+                                <h2 class="mb-0">45</h2>
+                                <small class="text-success">
+                                    <i class="bi bi-check-circle"></i> Toutes payées
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions rapides -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card gc-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-lightning me-2"></i>
+                            Actions rapides
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <a href="#" class="btn btn-outline-primary w-100 py-3">
+                                    <i class="bi bi-plus-lg d-block fs-4 mb-2"></i>
+                                    <span th:text="#{customer.add}">Nouveau client</span>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="#" class="btn btn-outline-info w-100 py-3">
+                                    <i class="bi bi-plus-lg d-block fs-4 mb-2"></i>
+                                    Nouveau produit
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="#" class="btn btn-outline-success w-100 py-3">
+                                    <i class="bi bi-plus-lg d-block fs-4 mb-2"></i>
+                                    Nouvelle commande
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card gc-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-palette me-2"></i>
+                            Test des thèmes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Testez les différents thèmes disponibles :
+                        </p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" data-gc-theme="light">
+                                <i class="bi bi-sun me-2"></i>
+                                <span th:text="#{theme.light}">Thème clair</span>
+                            </button>
+                            <button class="btn btn-outline-secondary" data-gc-theme="dark">
+                                <i class="bi bi-moon me-2"></i>
+                                <span th:text="#{theme.dark}">Thème sombre</span>
+                            </button>
+                            <button class="btn btn-outline-secondary" data-gc-theme="auto">
+                                <i class="bi bi-circle-half me-2"></i>
+                                <span th:text="#{theme.system}">Automatique</span>
+                            </button>
+                        </div>
+                        <hr>
+                        <small class="text-muted">
+                            Raccourci : <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activité récente -->
+        <div class="card gc-card">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Activité récente
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-person-plus text-success"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="mb-1">Nouveau client créé : <strong>Entreprise Démo SARL</strong></p>
+                                <small class="text-muted">Il y a 2 heures</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-file-earmark-plus text-info"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="mb-1">Facture générée : <strong>INV-2025-0001</strong></p>
+                                <small class="text-muted">Il y a 4 heures</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item border-0 px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-box-seam text-warning"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <p class="mb-1">Produit mis à jour : <strong>Ordinateur portable</strong></p>
+                                <small class="text-muted">Il y a 1 jour</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-sm btn-outline-secondary">
+                        Voir tout l'historique
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </th:block>
+</body>
+</html>

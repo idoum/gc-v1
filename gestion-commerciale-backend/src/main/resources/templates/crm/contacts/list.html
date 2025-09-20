@@ -1,0 +1,150 @@
+<!--
+  @path src/main/resources/templates/crm/contacts/list.html
+  @description Page de liste des contacts CRM avec recherche, filtres et actions HTMX
+-->
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content}, ~{::scripts})}">
+<head>
+    <title>Gestion des contacts CRM</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2 mb-3">
+                <i class="bi bi-person-lines-fill me-2 text-primary"></i>
+                Gestion des contacts
+            </h1>
+        </div>
+        <div class="col-md-4">
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="card bg-primary bg-gradient text-white">
+                        <div class="card-body text-center py-2">
+                            <div class="h4 mb-0" th:text="${totalContacts}">0</div>
+                            <small>Total</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-success bg-gradient text-white">
+                        <div class="card-body text-center py-2">
+                            <div class="h4 mb-0" th:text="${activeContacts}">0</div>
+                            <small>Actifs</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Filtres et recherche -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3 align-items-end" method="get" th:action="@{/crm/contacts}">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" th:value="${search}" placeholder="Recherche...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="status">
+                        <option value="">Tous statuts</option>
+                        <option th:each="s : ${contactStatuses}" th:value="${s}" th:text="${s}" th:selected="${status == s}"></option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="type">
+                        <option value="">Tous types</option>
+                        <option th:each="t : ${contactTypes}" th:value="${t}" th:text="${t}" th:selected="${type == t}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="customerId">
+                        <option value="">Tous clients</option>
+                        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.companyName}" th:selected="${customerId == c.id}"></option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Tableau des contacts -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div id="contact-table-container"
+                 hx-trigger="contactCreated, contactUpdated, contactDeleted from:body"
+                 hx-get="/crm/contacts"
+                 hx-include="[x-data]">
+                <th:block th:fragment="contact-table">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 gc-table">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Client</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Statut</th>
+                                <th>Type</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="contact : ${contacts.content}"
+                                th:replace="~{crm/contacts/_contactRow :: contact-row}"></tr>
+                            <tr th:if="${contacts.content.isEmpty()}">
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    Aucun contact trouvé
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination (similaire aux autres modules) -->
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top"
+                         th:if="${contacts.totalPages > 1}">
+                        <div class="text-muted">
+                            Affichage de <span th:text="${contacts.number * contacts.size + 1}">1</span>
+                            à <span th:text="${T(java.lang.Math).min((contacts.number + 1) * contacts.size, contacts.totalElements)}">20</span>
+                            sur <span th:text="${contacts.totalElements}">100</span> contacts
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item" th:classappend="${contacts.first} ? 'disabled'">
+                                    <a class="page-link" hx-get th:attr="hx-get=@{/crm/contacts(page=0)}" hx-target="#contact-table-container">Premier</a>
+                                </li>
+                                <li class="page-item" th:classappend="${contacts.first} ? 'disabled'">
+                                    <a class="page-link" hx-get th:attr="hx-get=@{/crm/contacts(page=${contacts.number - 1})}" hx-target="#contact-table-container">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item"
+                                    th:each="pageNum : ${#numbers.sequence(T(java.lang.Math).max(0, contacts.number - 2), T(java.lang.Math).min(contacts.totalPages - 1, contacts.number + 2))}"
+                                    th:classappend="${pageNum == contacts.number} ? 'active'">
+                                    <a class="page-link" hx-get th:attr="hx-get=@{/crm/contacts(page=${pageNum})}" hx-target="#contact-table-container" th:text="${pageNum + 1}">1</a>
+                                </li>
+                                <li class="page-item" th:classappend="${contacts.last} ? 'disabled'">
+                                    <a class="page-link" hx-get th:attr="hx-get=@{/crm/contacts(page=${contacts.number + 1})}" hx-target="#contact-table-container">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item" th:classappend="${contacts.last} ? 'disabled'">
+                                    <a class="page-link" hx-get th:attr="hx-get=@{/crm/contacts(page=${contacts.totalPages - 1})}" hx-target="#contact-table-container">Dernier</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</th:block>
+<th:block th:fragment="scripts">
+    <script th:src="@{/js/pages/crm/contacts.js}"></script>
+</th:block>
+</body>
+</html>

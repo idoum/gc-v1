@@ -1,0 +1,23 @@
+#
+# @path src/main/resources/application-flyway-test.yml  
+# @description Configuration Flyway pour tests de migration isolés
+#
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/gc_test_flyway?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: false
+    
+logging:
+  level:
+    org.flywaydb: DEBUG
+    org.springframework.jdbc: DEBUG

@@ -1,0 +1,72 @@
+<!--
+  @path src/main/resources/templates/fragments/alerts.html
+  @description Fragment pour affichage des messages d'alerte
+-->
+<div class="alert-container mb-3" th:fragment="alerts">
+    <!-- Messages Flash via session -->
+    <div class="alert alert-success alert-dismissible fade show" 
+         th:if="${session.successMessage}" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        <span th:text="${session.successMessage}">Message de succès</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <th:block th:with="temp=${#session.removeAttribute('successMessage')}"></th:block>
+    </div>
+    
+    <div class="alert alert-danger alert-dismissible fade show" 
+         th:if="${session.errorMessage}" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span th:text="${session.errorMessage}">Message d'erreur</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <th:block th:with="temp=${#session.removeAttribute('errorMessage')}"></th:block>
+    </div>
+    
+    <div class="alert alert-info alert-dismissible fade show" 
+         th:if="${session.infoMessage}" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        <span th:text="${session.infoMessage}">Message d'information</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <th:block th:with="temp=${#session.removeAttribute('infoMessage')}"></th:block>
+    </div>
+    
+    <div class="alert alert-warning alert-dismissible fade show" 
+         th:if="${session.warningMessage}" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span th:text="${session.warningMessage}">Message d'avertissement</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <th:block th:with="temp=${#session.removeAttribute('warningMessage')}"></th:block>
+    </div>
+    
+    <!-- Messages directement passés dans le modèle -->
+    <div class="alert alert-success alert-dismissible fade show" 
+         th:if="${successMessage}" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        <span th:text="${successMessage}">Message de succès</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    
+    <div class="alert alert-danger alert-dismissible fade show" 
+         th:if="${errorMessage}" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span th:text="${errorMessage}">Message d'erreur</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    
+    <!-- Notifications Alpine.js -->
+    <div x-data x-show="$store.notifications.items.length > 0">
+        <template x-for="notification in $store.notifications.items" :key="notification.id">
+            <div :class="`alert alert-${notification.type === 'error' ? 'danger' : notification.type} alert-dismissible fade show`"
+                 role="alert"
+                 x-show="true"
+                 x-transition>
+                <i :class="`bi ${notification.type === 'success' ? 'bi-check-circle' : 
+                              notification.type === 'error' ? 'bi-exclamation-triangle' : 
+                              notification.type === 'warning' ? 'bi-exclamation-triangle' : 
+                              'bi-info-circle'} me-2`"></i>
+                <span x-text="notification.message"></span>
+                <button type="button" 
+                        class="btn-close" 
+                        @click="$store.notifications.remove(notification.id)"></button>
+            </div>
+        </template>
+    </div>
+</div>

@@ -1,0 +1,161 @@
+<!--
+  @path src/main/resources/templates/fragments/sidebar.html
+  @description Fragment sidebar de navigation avec menu hiérarchique
+-->
+<nav class="gc-sidebar" th:fragment="sidebar" x-data="{ expanded: {} }">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/}" 
+                   th:classappend="${#httpServletRequest.requestURI == '/' ? 'active' : ''}">
+                    <i class="bi bi-house-door me-2"></i>
+                    <span th:text="#{nav.home}">Accueil</span>
+                </a>
+            </li>
+            
+            <!-- Section CRM -->
+            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER', 'USER')">
+                <button class="nav-link d-flex align-items-center w-100 border-0 bg-transparent"
+                        type="button"
+                        @click="expanded.crm = !expanded.crm"
+                        :aria-expanded="expanded.crm">
+                    <i class="bi bi-people me-2"></i>
+                    <span>CRM</span>
+                    <i class="bi bi-chevron-down ms-auto" 
+                       :class="{'rotate-180': expanded.crm}"
+                       style="transition: transform 0.2s;"></i>
+                </button>
+                <div x-show="expanded.crm" 
+                     x-collapse
+                     class="ms-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/customers}"
+                               th:classappend="${#httpServletRequest.requestURI.startsWith('/customers') ? 'active' : ''}">
+                                <i class="bi bi-person-lines-fill me-2"></i>
+                                <span th:text="#{nav.customers}">Clients</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/contacts}">
+                                <i class="bi bi-person-rolodex me-2"></i>
+                                <span>Contacts</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- Section Catalogue -->
+            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER', 'USER')">
+                <button class="nav-link d-flex align-items-center w-100 border-0 bg-transparent"
+                        type="button"
+                        @click="expanded.catalog = !expanded.catalog"
+                        :aria-expanded="expanded.catalog">
+                    <i class="bi bi-box-seam me-2"></i>
+                    <span>Catalogue</span>
+                    <i class="bi bi-chevron-down ms-auto" 
+                       :class="{'rotate-180': expanded.catalog}"
+                       style="transition: transform 0.2s;"></i>
+                </button>
+                <div x-show="expanded.catalog" 
+                     x-collapse
+                     class="ms-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/products}"
+                               th:classappend="${#httpServletRequest.requestURI.startsWith('/products') ? 'active' : ''}">
+                                <i class="bi bi-box me-2"></i>
+                                <span th:text="#{nav.products}">Produits</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/categories}">
+                                <i class="bi bi-tags me-2"></i>
+                                <span>Catégories</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- Section Ventes -->
+            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+                <button class="nav-link d-flex align-items-center w-100 border-0 bg-transparent"
+                        type="button"
+                        @click="expanded.sales = !expanded.sales"
+                        :aria-expanded="expanded.sales">
+                    <i class="bi bi-cart3 me-2"></i>
+                    <span>Ventes</span>
+                    <i class="bi bi-chevron-down ms-auto" 
+                       :class="{'rotate-180': expanded.sales}"
+                       style="transition: transform 0.2s;"></i>
+                </button>
+                <div x-show="expanded.sales" 
+                     x-collapse
+                     class="ms-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/quotes}">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                <span>Devis</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/orders}"
+                               th:classappend="${#httpServletRequest.requestURI.startsWith('/orders') ? 'active' : ''}">
+                                <i class="bi bi-cart-check me-2"></i>
+                                <span th:text="#{nav.orders}">Commandes</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link py-2" th:href="@{/invoices}"
+                               th:classappend="${#httpServletRequest.requestURI.startsWith('/invoices') ? 'active' : ''}">
+                                <i class="bi bi-receipt me-2"></i>
+                                <span th:text="#{nav.invoices}">Factures</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            
+            <!-- Séparateur -->
+            <hr>
+            
+            <!-- Section Rapports -->
+            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+                <a class="nav-link" th:href="@{/reports}"
+                   th:classappend="${#httpServletRequest.requestURI.startsWith('/reports') ? 'active' : ''}">
+                    <i class="bi bi-graph-up me-2"></i>
+                    <span th:text="#{nav.reports}">Rapports</span>
+                </a>
+            </li>
+            
+            <!-- Administration -->
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a class="nav-link" th:href="@{/admin}"
+                   th:classappend="${#httpServletRequest.requestURI.startsWith('/admin') ? 'active' : ''}">
+                    <i class="bi bi-gear me-2"></i>
+                    <span th:text="#{nav.settings}">Administration</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<script>
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.gc-sidebar');
+    const overlay = document.querySelector('.gc-sidebar-overlay');
+    
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+}
+
+// Fermer sidebar mobile si clic sur overlay
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('gc-sidebar-overlay')) {
+        toggleMobileSidebar();
+    }
+});
+</script>

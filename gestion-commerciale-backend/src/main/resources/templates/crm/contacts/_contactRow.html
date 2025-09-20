@@ -1,0 +1,51 @@
+<!--
+  @path src/main/resources/templates/crm/contacts/_contactRow.html
+  @description Fragment de ligne de tableau pour un contact CRM
+-->
+<tr th:fragment="contact-row" th:id="'contact-row-' + ${contact.id}">
+    <td>
+        <span th:text="${contact.fullName}">Nom Prénom</span>
+        <span th:if="${contact.isPrimary}" class="badge bg-primary ms-1">Principal</span>
+        <div th:if="${contact.jobTitle}" class="small text-muted" th:text="${contact.jobTitle}"></div>
+    </td>
+    <td>
+        <a th:href="@{'/customers/' + ${contact.customerId}}" th:text="${contact.customerName}">Client</a>
+    </td>
+    <td>
+        <a th:href="'mailto:' + ${contact.email}" th:text="${contact.email}">email</a>
+    </td>
+    <td>
+        <span th:text="${contact.phone}">-</span>
+        <span th:if="${contact.mobile}" class="d-block small text-muted" th:text="${contact.mobile}"></span>
+    </td>
+    <td>
+        <span th:switch="${contact.status}" class="badge">
+            <span th:case="'ACTIVE'" class="badge bg-success">Actif</span>
+            <span th:case="'INACTIVE'" class="badge bg-secondary">Inactif</span>
+            <span th:case="'BLOCKED'" class="badge bg-danger">Bloqué</span>
+            <span th:case="'ARCHIVED'" class="badge bg-light text-dark">Archivé</span>
+            <span th:case="'BOUNCED'" class="badge bg-warning">Bounce</span>
+        </span>
+    </td>
+    <td>
+        <span th:text="${contact.type}">Type</span>
+    </td>
+    <td class="text-end">
+        <div class="btn-group" role="group">
+            <a th:href="@{'/crm/contacts/' + ${contact.id}}" class="btn btn-sm btn-outline-secondary" title="Voir détail">
+                <i class="bi bi-eye"></i>
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary"
+                    th:attr="hx-get=@{'/crm/contacts/' + ${contact.id} + '/edit'}"
+                    hx-target="#modal-container" title="Modifier">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    th:attr="hx-delete=@{'/crm/contacts/' + ${contact.id}}"
+                    hx-confirm="Supprimer ce contact ?"
+                    hx-target="closest tr" hx-swap="outerHTML" title="Supprimer">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </td>
+</tr>
