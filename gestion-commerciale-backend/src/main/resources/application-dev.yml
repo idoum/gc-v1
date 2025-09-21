@@ -29,3 +29,5 @@ logging:
   level:
     com.example.gestioncommerciale: DEBUG
     org.springframework.security: DEBUG
+    org.flywaydb: DEBUG
+    org.springframework.jdbc.support: DEBUG

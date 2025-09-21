@@ -18,25 +18,13 @@ import java.util.Locale;
 @Controller
 @Slf4j
 public class LocaleController {
-    
+
     private final LocaleResolver localeResolver;
-    
+
     public LocaleController(LocaleResolver localeResolver) {
         this.localeResolver = localeResolver;
     }
-    
-    /**
-     * Redirection racine vers langue par défaut
-     */
-    @GetMapping("/")
-    public String redirectToDefaultLocale(HttpServletRequest request) {
-        Locale currentLocale = localeResolver.resolveLocale(request);
-        String lang = currentLocale.getLanguage();
-        
-        log.debug("Redirection vers langue par défaut: {}", lang);
-        return "redirect:/" + lang + "/";
-    }
-    
+
     /**
      * Pages localisées /fr/ et /en/
      */
@@ -44,22 +32,21 @@ public class LocaleController {
     public String localizedHomePage(
             @PathVariable String lang,
             HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         // Valider la langue
         if (!isValidLanguage(lang)) {
             log.warn("Langue non supportée: {}, redirection vers FR", lang);
             return "redirect:/fr/";
         }
-        
+
         // Définir la locale en session
         Locale locale = Locale.forLanguageTag(lang);
         localeResolver.setLocale(request, response, locale);
-        
+
         log.debug("Affichage page d'accueil en langue: {}", lang);
         return "index"; // Retourne le template index.html
     }
-    
+
     /**
      * Changement de langue avec redirection
      */
@@ -68,24 +55,23 @@ public class LocaleController {
             @RequestParam String lang,
             @RequestParam(defaultValue = "/") String returnUrl,
             HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+            HttpServletResponse response) {
         if (isValidLanguage(lang)) {
             Locale locale = Locale.forLanguageTag(lang);
             localeResolver.setLocale(request, response, locale);
             log.info("Changement de langue vers: {}", lang);
         }
-        
+
         // Rediriger vers l'URL avec la nouvelle langue
         if (returnUrl.startsWith("/fr/") || returnUrl.startsWith("/en/")) {
             returnUrl = "/" + lang + returnUrl.substring(3);
         } else if (!returnUrl.startsWith("/" + lang + "/")) {
             returnUrl = "/" + lang + returnUrl;
         }
-        
+
         return "redirect:" + returnUrl;
     }
-    
+
     /**
      * Vérifier si la langue est supportée
      */

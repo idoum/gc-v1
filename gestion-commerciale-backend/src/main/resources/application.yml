@@ -3,5 +3,5 @@
 # @description Configuration Spring Boot et inclusion des profils
 ---
 spring:
-  profiles:
-    active: dev
+ profiles:
+  active: dev

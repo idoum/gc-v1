@@ -6,10 +6,11 @@ package com.example.gestioncommerciale.mapper;
 
 import org.mapstruct.Mapper;
 import com.example.gestioncommerciale.dto.CategoryDTO;
-import com.example.gestioncommerciale.model.Category;
+import com.example.gestioncommerciale.model.catalog.Category;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", implementationName = "CategoryDefaultMapperImpl")
 public interface CategoryMapper {
     CategoryDTO toDto(Category entity);
+
     Category toEntity(CategoryDTO dto);
 }
